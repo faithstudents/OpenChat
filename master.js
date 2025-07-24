@@ -1,0 +1,162 @@
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+// Your Supabase config
+const SUPABASE_URL = 'https://htwevjqqqyojcbgeevqy.supabase.co'
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh0d2V2anFxcXlvamNiZ2VldnF5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMzMDg0NzYsImV4cCI6MjA2ODg4NDQ3Nn0.lszlnu4aWcDRAhp_MjJaECRFzGYze_uP7GhfWszA6fY'
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
+
+const messagesList = document.getElementById('messages')
+const messageForm = document.getElementById('message-form')
+const messageInput = document.getElementById('message-input')
+
+let user = null
+const userCache = new Map()
+
+// Keep track of last message timestamp or id to only fetch new messages
+let lastFetchedTimestamp = null
+
+init()
+
+async function init() {
+  const { data: { session }, error } = await supabase.auth.getSession()
+  if (error || !session) {
+    window.location.href = 'index.html'
+    return
+  }
+  user = session.user
+  console.log('Logged in user:', user)
+
+  await loadMessages()
+  startPollingNewMessages()
+}
+
+async function loadMessages() {
+  const { data, error } = await supabase
+    .from('messages')
+    .select('id, content, user_id, created_at')
+    .order('created_at', { ascending: true })
+
+  if (error) {
+    console.error('Error loading messages:', error.message)
+    return
+  }
+
+  messagesList.innerHTML = ''
+  for (const msg of data) {
+    await appendMessage(msg)
+  }
+
+  // Track timestamp of last message loaded
+  if (data.length > 0) {
+    lastFetchedTimestamp = data[data.length - 1].created_at
+  }
+
+  scrollToBottom()
+}
+
+async function fetchNewMessages() {
+  if (!lastFetchedTimestamp) return
+
+  // Fetch messages created after last fetched timestamp
+  const { data, error } = await supabase
+    .from('messages')
+    .select('id, content, user_id, created_at')
+    .gt('created_at', lastFetchedTimestamp)
+    .order('created_at', { ascending: true })
+
+  if (error) {
+    console.error('Error fetching new messages:', error.message)
+    return
+  }
+
+  if (data.length === 0) return
+
+  for (const msg of data) {
+    await appendMessage(msg)
+    lastFetchedTimestamp = msg.created_at
+  }
+
+  scrollToBottom()
+}
+
+function startPollingNewMessages() {
+  setInterval(fetchNewMessages, 3000) // every 3 seconds
+}
+
+async function getUserInfo(userId) {
+  if (userCache.has(userId)) {
+    return userCache.get(userId)
+  }
+
+  // Try to get username from profiles table first
+  const { data: profileData, error: profileError } = await supabase
+    .from('profiles')
+    .select('username')
+    .eq('id', userId)
+    .single()
+
+  console.log('profileData:', profileData, 'profileError:', profileError)
+
+  let username = null
+  if (profileError || !profileData || !profileData.username) {
+    // Fallback: try users table (might fail due to permissions)
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('email')
+      .eq('id', userId)
+      .single()
+
+    console.log('userData:', userData, 'userError:', userError)
+
+    if (userError || !userData || !userData.email) {
+      username = 'Unknown'
+    } else {
+      username = userData.email.split('@')[0]
+    }
+  } else {
+    username = profileData.username
+  }
+
+  const userInfo = { id: userId, username }
+  userCache.set(userId, userInfo)
+  return userInfo
+}
+
+async function appendMessage(msg) {
+  const userInfo = await getUserInfo(msg.user_id)
+  const userName = msg.user_id === user.id ? 'You' : userInfo.username || msg.user_id.slice(0, 8)
+
+  const li = document.createElement('li')
+  li.classList.add('message')
+  if (msg.user_id === user.id) li.classList.add('self')
+
+  li.innerHTML = `<strong>${userName}:</strong> ${msg.content}`
+  messagesList.appendChild(li)
+}
+
+function scrollToBottom() {
+  messagesList.scrollTop = messagesList.scrollHeight
+}
+
+messageForm.addEventListener('submit', async (e) => {
+  e.preventDefault()
+
+  const content = messageInput.value.trim()
+  if (!content) return
+
+  const { error } = await supabase.from('messages').insert([
+    {
+      content,
+      user_id: user.id
+    }
+  ])
+
+  if (error) {
+    alert('Failed to send message: ' + error.message)
+  } else {
+    messageInput.value = ''
+    messageInput.focus()
+    // DON'T append message here, wait for polling to fetch it
+  }
+})

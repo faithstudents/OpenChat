@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OpenChat</title>
+  <link rel="stylesheet" href="chat.css" />
+</head>
+<body>
+  <header>
+    <h1>OpenChat</h1>
+    <nav style="margin-left: auto; display: flex; gap: 1rem;">
+      <a href="rules.html" style="color: #7289da; text-decoration: none; font-weight: 600;">Rules</a>
+      <button id="logout-btn" style="background: #7289da; border: none; color: white; padding: 0.5rem 1rem; border-radius: 5px; cursor: pointer;">
+        Logout
+      </button>
+    </nav>
+  </header>
+
+  <div id="chat-section">
+    <aside id="sidebar">
+      <h2>Chats</h2>
+      <button id="new-chat">+</button>
+      <button id="main-chat" class="active">Faith Chat</button>
+    </aside>
+
+    <main id="chat-window">
+      <ul id="messages"></ul>
+
+      <form id="message-form">
+        <input
+          type="text"
+          id="message-input"
+          placeholder="Type your message..."
+          autocomplete="off"
+          required
+        />
+        <button type="submit">Send</button>
+      </form>
+    </main>
+  </div>
+
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+    const supabase = createClient(
+      'https://htwevjqqqyojcbgeevqy.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh0d2V2anFxcXlvamNiZ2VldnF5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMzMDg0NzYsImV4cCI6MjA2ODg4NDQ3Nn0.lszlnu4aWcDRAhp_MjJaECRFzGYze_uP7GhfWszA6fY'
+    )
+
+    const logoutBtn = document.getElementById('logout-btn')
+    logoutBtn.addEventListener('click', async () => {
+      await supabase.auth.signOut()
+      window.location.href = 'index.html'
+    })
+  </script>
+
+  <script type="module" src="master.js"></script>
+</body>
+</html>
