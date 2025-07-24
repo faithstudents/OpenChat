@@ -10,6 +10,8 @@ const messagesList = document.getElementById('messages')
 const messageForm = document.getElementById('message-form')
 const messageInput = document.getElementById('message-input')
 const profileNameEl = document.getElementById('profile-username')
+const imageInput = document.getElementById('image-input')
+const uploadImageBtn = document.getElementById('upload-image-btn')
 // const logoutBtn = document.getElementById('logout-btn') // Optional
 
 let user = null
@@ -137,7 +139,12 @@ async function appendMessage(msg) {
   li.classList.add('message')
   if (msg.user_id === user.id) li.classList.add('self')
 
-  li.innerHTML = `<strong>${userName}:</strong> ${msg.content}`
+  if (msg.content.startsWith('__img__')) {
+    const imageUrl = msg.content.replace('__img__', '')
+    li.innerHTML = `<strong>${userName}:</strong><br><img src="${imageUrl}" alt="Image" style="max-width: 300px; border-radius: 8px; margin-top: 5px;" />`
+  } else {
+    li.innerHTML = `<strong>${userName}:</strong> ${msg.content}`
+  }
   messagesList.appendChild(li)
 }
 
@@ -165,6 +172,50 @@ messageForm.addEventListener('submit', async (e) => {
     messageInput.focus()
     // message will appear after polling
   }
+})
+
+uploadImageBtn.addEventListener('click', () => {
+  imageInput.click()
+})
+
+imageInput.addEventListener('change', async (event) => {
+  const file = event.target.files[0]
+  if (!file) return
+
+  const fileExt = file.name.split('.').pop()
+  const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
+  const filePath = `uploads/${fileName}`
+
+  const { error: uploadError } = await supabase
+    .storage
+    .from('images')
+    .upload(filePath, file)
+
+  if (uploadError) {
+    alert('Image upload failed: ' + uploadError.message)
+    return
+  }
+
+  const { data } = supabase
+    .storage
+    .from('images')
+    .getPublicUrl(filePath)
+
+  const publicUrl = data.publicUrl
+  const imageMessage = `__img__${publicUrl}`
+
+  const { error: insertError } = await supabase.from('messages').insert([
+    {
+      content: imageMessage,
+      user_id: user.id
+    }
+  ])
+
+  if (insertError) {
+    alert('Failed to send image: ' + insertError.message)
+  }
+
+  imageInput.value = '' // reset file input
 })
 
 // OPTIONAL: logout support
