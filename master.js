@@ -1,6 +1,6 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
-// Your Supabase config
+// Supabase configuration
 const SUPABASE_URL = 'https://htwevjqqqyojcbgeevqy.supabase.co'
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh0d2V2anFxcXlvamNiZ2VldnF5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMzMDg0NzYsImV4cCI6MjA2ODg4NDQ3Nn0.lszlnu4aWcDRAhp_MjJaECRFzGYze_uP7GhfWszA6fY'
 
@@ -9,11 +9,11 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
 const messagesList = document.getElementById('messages')
 const messageForm = document.getElementById('message-form')
 const messageInput = document.getElementById('message-input')
+const profileNameEl = document.getElementById('profile-username')
+// const logoutBtn = document.getElementById('logout-btn') // Optional
 
 let user = null
 const userCache = new Map()
-
-// Keep track of last message timestamp or id to only fetch new messages
 let lastFetchedTimestamp = null
 
 init()
@@ -24,11 +24,29 @@ async function init() {
     window.location.href = 'index.html'
     return
   }
+
   user = session.user
   console.log('Logged in user:', user)
 
+  // Show username in sidebar profile
+  await loadProfileUsername(user.id)
+
   await loadMessages()
   startPollingNewMessages()
+}
+
+async function loadProfileUsername(userId) {
+  const { data: profileData, error: profileError } = await supabase
+    .from('profiles')
+    .select('username')
+    .eq('id', userId)
+    .single()
+
+  if (profileError || !profileData?.username) {
+    profileNameEl.textContent = user.email.split('@')[0]
+  } else {
+    profileNameEl.textContent = profileData.username
+  }
 }
 
 async function loadMessages() {
@@ -47,7 +65,6 @@ async function loadMessages() {
     await appendMessage(msg)
   }
 
-  // Track timestamp of last message loaded
   if (data.length > 0) {
     lastFetchedTimestamp = data[data.length - 1].created_at
   }
@@ -58,7 +75,6 @@ async function loadMessages() {
 async function fetchNewMessages() {
   if (!lastFetchedTimestamp) return
 
-  // Fetch messages created after last fetched timestamp
   const { data, error } = await supabase
     .from('messages')
     .select('id, content, user_id, created_at')
@@ -70,8 +86,6 @@ async function fetchNewMessages() {
     return
   }
 
-  if (data.length === 0) return
-
   for (const msg of data) {
     await appendMessage(msg)
     lastFetchedTimestamp = msg.created_at
@@ -81,35 +95,27 @@ async function fetchNewMessages() {
 }
 
 function startPollingNewMessages() {
-  setInterval(fetchNewMessages, 3000) // every 3 seconds
+  setInterval(fetchNewMessages, 3000)
 }
 
 async function getUserInfo(userId) {
-  if (userCache.has(userId)) {
-    return userCache.get(userId)
-  }
+  if (userCache.has(userId)) return userCache.get(userId)
 
-  // Try to get username from profiles table first
   const { data: profileData, error: profileError } = await supabase
     .from('profiles')
     .select('username')
     .eq('id', userId)
     .single()
 
-  console.log('profileData:', profileData, 'profileError:', profileError)
-
-  let username = null
-  if (profileError || !profileData || !profileData.username) {
-    // Fallback: try users table (might fail due to permissions)
+  let username
+  if (profileError || !profileData?.username) {
     const { data: userData, error: userError } = await supabase
       .from('users')
       .select('email')
       .eq('id', userId)
       .single()
 
-    console.log('userData:', userData, 'userError:', userError)
-
-    if (userError || !userData || !userData.email) {
+    if (userError || !userData?.email) {
       username = 'Unknown'
     } else {
       username = userData.email.split('@')[0]
@@ -125,7 +131,7 @@ async function getUserInfo(userId) {
 
 async function appendMessage(msg) {
   const userInfo = await getUserInfo(msg.user_id)
-  const userName = msg.user_id === user.id ? 'You' : userInfo.username || msg.user_id.slice(0, 8)
+  const userName = msg.user_id === user.id ? 'You' : userInfo.username
 
   const li = document.createElement('li')
   li.classList.add('message')
@@ -157,6 +163,12 @@ messageForm.addEventListener('submit', async (e) => {
   } else {
     messageInput.value = ''
     messageInput.focus()
-    // DON'T append message here, wait for polling to fetch it
+    // message will appear after polling
   }
 })
+
+// OPTIONAL: logout support
+// logoutBtn?.addEventListener('click', async () => {
+//   await supabase.auth.signOut()
+//   window.location.href = 'index.html'
+// })
