@@ -18,6 +18,8 @@ let user = null
 const userCache = new Map()
 let lastFetchedTimestamp = null
 
+const usernameCache = new Map() // Caches @username lookups
+
 init()
 
 async function init() {
@@ -143,8 +145,10 @@ async function appendMessage(msg) {
     const imageUrl = msg.content.replace('__img__', '')
     li.innerHTML = `<strong>${userName}:</strong><br><img src="${imageUrl}" alt="Image" style="max-width: 300px; border-radius: 8px; margin-top: 5px;" />`
   } else {
-    li.innerHTML = `<strong>${userName}:</strong> ${msg.content}`
+    const parsedContent = await parseMentionsAndLinks(msg.content)
+    li.innerHTML = `<strong>${userName}:</strong> ${parsedContent}`
   }
+
   messagesList.appendChild(li)
 }
 
@@ -217,6 +221,43 @@ imageInput.addEventListener('change', async (event) => {
 
   imageInput.value = '' // reset file input
 })
+
+async function parseMentionsAndLinks(content) {
+  const mentionRegex = /@(\w+)/g
+  const urlRegex = /https?:\/\/[^\s]+/g
+
+  // Handle @mentions
+  const mentionMatches = [...content.matchAll(mentionRegex)]
+  for (const match of mentionMatches) {
+    const mentionedUsername = match[1]
+
+    if (!usernameCache.has(mentionedUsername)) {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('username', mentionedUsername)
+        .single()
+
+      if (!error && data) {
+        usernameCache.set(mentionedUsername, data.id)
+      }
+    }
+
+    if (usernameCache.has(mentionedUsername)) {
+      content = content.replaceAll(
+        `@${mentionedUsername}`,
+        `<span style="color: #007bff; font-weight: bold;">@${mentionedUsername}</span>`
+      )
+    }
+  }
+
+  // Handle links
+  content = content.replace(urlRegex, (url) => {
+    return `<a href="${url}" target="_blank" rel="noopener noreferrer" style="color: #00aaff;">${url}</a>`
+  })
+
+  return content
+}
 
 // OPTIONAL: logout support
 // logoutBtn?.addEventListener('click', async () => {
