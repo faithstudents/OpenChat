@@ -169,7 +169,7 @@ header nav button:hover {
 
 /* Messages sent by current user */
 #messages li.self {
-  background-color: #d0f0ff;
+  background-color: #f0f0f0;
   color: black;
   margin-left: auto;
   border-bottom-right-radius: 2px;
