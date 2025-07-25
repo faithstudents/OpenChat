@@ -120,7 +120,7 @@ async function fetchNewMessages() {
 }
 
 function startPollingMessages() {
-  setInterval(fetchNewMessages, 3000)
+  setInterval(fetchNewMessages, 500)
 }
 
 async function appendMessage(msg) {
