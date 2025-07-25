@@ -9,7 +9,7 @@ body, html {
   height: 100%;
   background-color: #36393f;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  color: #222222;
+  color: #dcddde;
   display: flex;
   flex-direction: column;
 }
@@ -135,6 +135,23 @@ header nav button:hover {
   background-color: #5b6eae;
 }
 
+.sidebar-link {
+  display: block;
+  background: transparent;
+  color: #b9bbbe;
+  font-size: 1rem;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.sidebar-link:hover {
+  background-color: #393c43;
+  color: white;
+}
+
 /* Chat window */
 #chat-window {
   flex-grow: 1;
@@ -236,4 +253,24 @@ header nav button:hover {
   color: #dcddde;
   margin: 0;
   word-break: break-word;
+}
+
+/* DMs */
+/* Assuming your usernames in the DMs sidebar are buttons or list items with class .dm-user */
+/* Style for each user item in the sidebar */
+#user-list li {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #b9bbbe;
+  transition: background-color 0.25s ease, color 0.25s ease;
+  user-select: none;
+  margin-bottom: 0.3rem;
+}
+
+/* Hover effect */
+#user-list li:hover {
+  background-color: #5865f2; /* bright blue */
+  color: white;
+  box-shadow: 0 2px 8px rgba(88, 101, 242, 0.5);
 }

@@ -10,15 +10,19 @@ const messagesList = document.getElementById('messages')
 const messageForm = document.getElementById('message-form')
 const messageInput = document.getElementById('message-input')
 const profileNameEl = document.getElementById('profile-username')
+
+const messageSound = new Audio('notification.mp3');
+const dmSound = new Audio('dm.mp3');
+
 const imageInput = document.getElementById('image-input')
 const uploadImageBtn = document.getElementById('upload-image-btn')
+
+const isOnDMPage = window.location.pathname.includes('dms.html');
 // const logoutBtn = document.getElementById('logout-btn') // Optional
 
 let user = null
 const userCache = new Map()
 let lastFetchedTimestamp = null
-
-const usernameCache = new Map() // Caches @username lookups
 
 init()
 
@@ -57,6 +61,7 @@ async function loadMessages() {
   const { data, error } = await supabase
     .from('messages')
     .select('id, content, user_id, created_at')
+    .is('dm_to', null) // Only messages where dm_to is null (public chat)
     .order('created_at', { ascending: true })
 
   if (error) {
@@ -83,6 +88,7 @@ async function fetchNewMessages() {
     .from('messages')
     .select('id, content, user_id, created_at')
     .gt('created_at', lastFetchedTimestamp)
+    .is('dm_to', null)   // <-- ADD THIS FILTER to only fetch public messages
     .order('created_at', { ascending: true })
 
   if (error) {
@@ -99,7 +105,7 @@ async function fetchNewMessages() {
 }
 
 function startPollingNewMessages() {
-  setInterval(fetchNewMessages, 3000)
+  setInterval(fetchNewMessages, 1000)
 }
 
 async function getUserInfo(userId) {
@@ -145,11 +151,36 @@ async function appendMessage(msg) {
     const imageUrl = msg.content.replace('__img__', '')
     li.innerHTML = `<strong>${userName}:</strong><br><img src="${imageUrl}" alt="Image" style="max-width: 300px; border-radius: 8px; margin-top: 5px;" />`
   } else {
-    const parsedContent = await parseMentionsAndLinks(msg.content)
+    const parsedContent = parseLinks(msg.content)
     li.innerHTML = `<strong>${userName}:</strong> ${parsedContent}`
   }
 
   messagesList.appendChild(li)
+
+  // Play sound only if message is NOT from the current user
+  if (msg.user_id !== user.id) {
+  // Is this a public message?
+  const isPublicMessage = msg.dm_to === null;
+
+  if (!isOnDMPage && !isPublicMessage) {
+        dmSound.play().catch(() => {});
+    } else if (!isPublicMessage && isOnDMPage) {
+        // On DM page, and this is a DM — don't play
+    } else if (!isOnDMPage && isPublicMessage) {
+        // Not on DM page, but it's a public message — don't play
+    } else if (isOnDMPage && isPublicMessage) {
+        // On DM page, and public message — ignore
+    } else {
+        // You're on the correct page for the message, don't play
+    }
+    }
+}
+
+function parseLinks(content) {
+  const urlRegex = /https?:\/\/[^\s]+/g
+  return content.replace(urlRegex, url => {
+    return `<a href="${url}" target="_blank" rel="noopener noreferrer" style="color: #00aaff;">${url}</a>`
+  })
 }
 
 function scrollToBottom() {
@@ -165,7 +196,8 @@ messageForm.addEventListener('submit', async (e) => {
   const { error } = await supabase.from('messages').insert([
     {
       content,
-      user_id: user.id
+      user_id: user.id,
+      dm_to: null  // explicitly say it's a public message
     }
   ])
 
@@ -186,12 +218,13 @@ imageInput.addEventListener('change', async (event) => {
   const file = event.target.files[0]
   if (!file) return
 
+  // Generate unique file name
   const fileExt = file.name.split('.').pop()
   const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
   const filePath = `uploads/${fileName}`
 
-  const { error: uploadError } = await supabase
-    .storage
+  // Upload to Supabase Storage
+  const { error: uploadError } = await supabase.storage
     .from('images')
     .upload(filePath, file)
 
@@ -200,64 +233,31 @@ imageInput.addEventListener('change', async (event) => {
     return
   }
 
-  const { data } = supabase
-    .storage
+  // Get public URL of uploaded image
+  const { data } = supabase.storage
     .from('images')
     .getPublicUrl(filePath)
 
   const publicUrl = data.publicUrl
+
+  // Send message with special image prefix
   const imageMessage = `__img__${publicUrl}`
 
   const { error: insertError } = await supabase.from('messages').insert([
     {
       content: imageMessage,
-      user_id: user.id
+      user_id: user.id,
+      dm_to: null,
     }
   ])
 
   if (insertError) {
-    alert('Failed to send image: ' + insertError.message)
+    alert('Failed to send image message: ' + insertError.message)
   }
 
-  imageInput.value = '' // reset file input
+  // Reset file input so same file can be re-uploaded if needed
+  imageInput.value = ''
 })
-
-async function parseMentionsAndLinks(content) {
-  const mentionRegex = /@(\w+)/g
-  const urlRegex = /https?:\/\/[^\s]+/g
-
-  // Handle @mentions
-  const mentionMatches = [...content.matchAll(mentionRegex)]
-  for (const match of mentionMatches) {
-    const mentionedUsername = match[1]
-
-    if (!usernameCache.has(mentionedUsername)) {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('username', mentionedUsername)
-        .single()
-
-      if (!error && data) {
-        usernameCache.set(mentionedUsername, data.id)
-      }
-    }
-
-    if (usernameCache.has(mentionedUsername)) {
-      content = content.replaceAll(
-        `@${mentionedUsername}`,
-        `<span style="color: #007bff; font-weight: bold;">@${mentionedUsername}</span>`
-      )
-    }
-  }
-
-  // Handle links
-  content = content.replace(urlRegex, (url) => {
-    return `<a href="${url}" target="_blank" rel="noopener noreferrer" style="color: #00aaff;">${url}</a>`
-  })
-
-  return content
-}
 
 // OPTIONAL: logout support
 // logoutBtn?.addEventListener('click', async () => {
