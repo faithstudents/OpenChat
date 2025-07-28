@@ -38,6 +38,17 @@ async function init() {
   startPollingMessages()
 }
 
+function parseLinks(text) {
+  const urlRegex = /((https?:\/\/)?([\w\-]+\.)+[a-z]{2,}(\/[\w\-./?%&=]*)?)/gi
+  return text.replace(urlRegex, (match) => {
+    let url = match
+    if (!url.startsWith('http')) {
+      url = 'https://' + url
+    }
+    return `<a href="${url}" target="_blank" style="color: #00aff4; text-decoration: underline;">${match}</a>`
+  })
+}
+
 async function loadUsers() {
   // Load all users except current user
   const { data: profiles, error } = await supabase
@@ -125,6 +136,7 @@ function startPollingMessages() {
 
 async function appendMessage(msg) {
   const userName = msg.user_id === user.id ? 'You' : selectedUser.username
+  const parsedContent = parseLinks(msg.content)
 
   const li = document.createElement('li')
   li.style.padding = '0.5rem 0.75rem'
@@ -138,7 +150,7 @@ async function appendMessage(msg) {
   li.style.lineHeight = '1.3'
   li.style.marginLeft = msg.user_id === user.id ? 'auto' : '0'
 
-  li.innerHTML = `<strong>${userName}:</strong> ${msg.content}`
+  li.innerHTML = `<strong>${userName}:</strong> ${parsedContent}`
   messagesList.appendChild(li)
 }
 
