@@ -184,6 +184,11 @@ header nav button:hover {
   color: #dcddde;
 }
 
+#messages li:hover {
+  transition: 0.3s ease;
+  background-color: #202225;
+}
+
 /* Messages sent by current user */
 #messages li.self {
   background-color: #f0f0f0;
@@ -191,6 +196,12 @@ header nav button:hover {
   margin-left: auto;
   border-bottom-right-radius: 2px;
   border-bottom-left-radius: 8px;
+}
+
+#messages li.self:hover {
+  transition: 0.3s ease;
+  background-color: #202225;
+  color: white;
 }
 
 /* Message input form */
