@@ -12,6 +12,7 @@ body, html {
   color: #dcddde;
   display: flex;
   flex-direction: column;
+  min-width: 300px;
 }
 
 header {
@@ -23,16 +24,18 @@ header {
   flex-shrink: 0;
   user-select: none;
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.3);
-
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 header nav {
   display: flex;
   gap: 1rem;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 header nav a {
@@ -63,7 +66,7 @@ header nav button:hover {
 
 #chat-section {
   display: flex;
-  height: calc(100vh - 60px); /* header height */
+  height: calc(100vh - 60px);
   overflow: hidden;
   flex-grow: 1;
 }
@@ -75,7 +78,7 @@ header nav button:hover {
   padding: 1rem;
   display: flex;
   flex-direction: column;
-  justify-content: space-between; /* Pushes profile to bottom */
+  justify-content: space-between;
   box-shadow: inset -1px 0 0 rgba(79,84,92,0.5);
   user-select: none;
   overflow-y: auto;
@@ -101,7 +104,7 @@ header nav button:hover {
   border: none;
   color: #b9bbbe;
   font-size: 1rem;
-  padding: 0.5rem 1rem;
+  padding: 0.75rem 1rem;
   border-radius: 4px;
   text-align: left;
   cursor: pointer;
@@ -140,7 +143,7 @@ header nav button:hover {
   background: transparent;
   color: #b9bbbe;
   font-size: 1rem;
-  padding: 0.5rem 1rem;
+  padding: 0.75rem 1rem;
   border-radius: 4px;
   text-decoration: none;
   cursor: pointer;
@@ -199,7 +202,6 @@ header nav button:hover {
 }
 
 #messages li.self:hover {
-  transition: 0.3s ease;
   background-color: #202225;
   color: white;
 }
@@ -211,6 +213,7 @@ header nav button:hover {
   padding-top: 0.3rem;
   border-top: 1px solid #202225;
   flex-shrink: 0;
+  flex-wrap: wrap;
 }
 
 #message-input {
@@ -223,6 +226,7 @@ header nav button:hover {
   color: #dcddde;
   outline: none;
   transition: background-color 0.15s ease;
+  min-width: 0;
 }
 
 #message-input::placeholder {
@@ -254,7 +258,7 @@ header nav button:hover {
   padding: 0.75rem 1rem;
   border-radius: 8px;
   text-align: center;
-  margin-top: 40rem;
+  margin-top: auto;
   box-shadow: 0 -1px 2px rgba(0,0,0,0.2);
 }
 
@@ -266,11 +270,9 @@ header nav button:hover {
   word-break: break-word;
 }
 
-/* DMs */
-/* Assuming your usernames in the DMs sidebar are buttons or list items with class .dm-user */
-/* Style for each user item in the sidebar */
+/* DM user list */
 #user-list li {
-  padding: 0.5rem 1rem;
+  padding: 0.75rem 1rem;
   border-radius: 6px;
   cursor: pointer;
   color: #b9bbbe;
@@ -279,14 +281,13 @@ header nav button:hover {
   margin-bottom: 0.3rem;
 }
 
-/* Hover effect */
 #user-list li:hover {
-  background-color: #5865f2; /* bright blue */
+  background-color: #5865f2;
   color: white;
   box-shadow: 0 2px 8px rgba(88, 101, 242, 0.5);
 }
 
-/* Mobile view adjustments */
+/* Responsive Layout */
 @media (max-width: 768px) {
   #chat-section {
     flex-direction: column;
@@ -301,23 +302,23 @@ header nav button:hover {
     padding: 0.5rem;
     box-shadow: none;
     justify-content: flex-start;
+    align-items: center;
+    gap: 0.5rem;
   }
 
   #sidebar-content {
     flex-direction: row;
+    flex-wrap: nowrap;
     gap: 0.5rem;
   }
 
-  #sidebar h2 {
-    display: none; /* Hide titles to save space */
-  }
-
+  #sidebar h2,
   #profile {
-    display: none; /* Hide profile on smaller screens */
+    display: none;
   }
 
   #chat-window {
-    padding: 0.5rem;
+    padding: 0.75rem;
   }
 
   #messages li {
@@ -350,4 +351,3 @@ header nav button:hover {
     gap: 0.5rem;
   }
 }
-
