@@ -1,4 +1,4 @@
-/* Reset */
+/* RESET */
 * {
   margin: 0;
   padding: 0;
@@ -7,23 +7,18 @@
 
 html, body {
   height: 100%;
-  background-color: #36393f;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #36393f;
   color: #dcddde;
-  min-width: 320px;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
 }
 
-/* Header */
+/* HEADER */
 header {
   background-color: #2f3136;
   padding: 1rem 2rem;
   font-weight: 700;
   font-size: 1.5rem;
   color: white;
-  flex-shrink: 0;
   user-select: none;
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.3);
   display: flex;
@@ -37,7 +32,6 @@ header nav {
   display: flex;
   gap: 1rem;
   flex-wrap: wrap;
-  align-items: center;
 }
 
 header nav a {
@@ -46,11 +40,9 @@ header nav a {
   font-weight: 600;
   transition: color 0.2s ease;
 }
-
 header nav a:hover {
   color: #99aab5;
 }
-
 header nav button {
   background-color: #7289da;
   border: none;
@@ -61,127 +53,77 @@ header nav button {
   font-weight: bold;
   transition: background-color 0.2s ease;
 }
-
 header nav button:hover {
   background-color: #5b6eae;
 }
 
-/* Main Layout */
+/* MAIN CHAT LAYOUT */
 #chat-section {
-  flex-grow: 1;
   display: flex;
   flex-direction: row;
-  height: calc(100vh - 64px); /* Adjust if header size changes */
+  height: calc(100vh - 64px); /* header height */
   overflow: hidden;
 }
 
-/* Sidebar */
+/* SIDEBAR */
 #sidebar {
   width: 240px;
-  min-width: 200px;
   background-color: #2f3136;
   padding: 1rem;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
   overflow-y: auto;
-  box-shadow: inset -1px 0 0 rgba(79, 84, 92, 0.5);
-  user-select: none;
+  flex-shrink: 0;
 }
-
-#sidebar-content {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
 #sidebar h2 {
   font-size: 1.4rem;
-  font-weight: 700;
   color: white;
-  border-bottom: 1px solid #202225;
-  padding-bottom: 0.3rem;
   margin-bottom: 1rem;
 }
-
-#sidebar button,
-.sidebar-link {
-  background: transparent;
+#sidebar button {
+  background: none;
   border: none;
   color: #b9bbbe;
-  font-size: 1rem;
   padding: 0.75rem 1rem;
-  border-radius: 4px;
   text-align: left;
+  border-radius: 4px;
   cursor: pointer;
-  transition: background-color 0.15s ease;
 }
-
-#sidebar button:hover,
-.sidebar-link:hover,
-#sidebar button.active {
+#sidebar button:hover {
   background-color: #393c43;
   color: white;
 }
-
-#sidebar button#new-chat {
-  font-size: 1.5rem;
-  font-weight: 700;
+#sidebar #new-chat {
+  background-color: #7289da;
+  color: white;
   width: 40px;
   height: 40px;
-  padding: 0;
   border-radius: 50%;
-  background-color: #7289da;
-  color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-weight: bold;
   margin-bottom: 1rem;
-  box-shadow: 0 2px 6px rgba(114, 137, 218, 0.7);
-  transition: background-color 0.3s ease;
 }
 
-#sidebar button#new-chat:hover {
-  background-color: #5b6eae;
-}
-
-#profile {
-  background-color: #292b2f;
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  text-align: center;
-  margin-top: auto;
-  box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
-}
-
-#profile h3 {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: #dcddde;
-  margin: 0;
-  word-break: break-word;
-}
-
-/* Chat Window */
+/* CHAT WINDOW */
 #chat-window {
   flex-grow: 1;
   background-color: #36393f;
   display: flex;
   flex-direction: column;
-  padding: 1rem 1.5rem;
+  padding: 1rem;
   overflow: hidden;
 }
 
-/* Messages */
+/* MESSAGES */
 #messages {
   flex-grow: 1;
   overflow-y: auto;
-  list-style: none;
   margin-bottom: 1rem;
+  list-style: none;
   padding-right: 10px;
-  scroll-behavior: smooth;
 }
-
 #messages li {
   padding: 0.5rem 0.75rem;
   margin-bottom: 0.6rem;
@@ -190,36 +132,20 @@ header nav button:hover {
   max-width: 75%;
   word-wrap: break-word;
   font-size: 0.95rem;
-  line-height: 1.3;
-  color: #dcddde;
 }
-
-#messages li:hover {
-  background-color: #202225;
-}
-
 #messages li.self {
   background-color: #f0f0f0;
   color: black;
   margin-left: auto;
-  border-bottom-right-radius: 2px;
-  border-bottom-left-radius: 8px;
 }
 
-#messages li.self:hover {
-  background-color: #202225;
-  color: white;
-}
-
-/* Input Form */
+/* MESSAGE FORM */
 #message-form {
   display: flex;
   gap: 0.75rem;
   border-top: 1px solid #202225;
-  flex-shrink: 0;
-  padding-top: 0.3rem;
+  padding-top: 0.5rem;
 }
-
 #message-input {
   flex-grow: 1;
   background-color: #40444b;
@@ -228,53 +154,18 @@ header nav button:hover {
   padding: 0.65rem 1rem;
   font-size: 1rem;
   color: #dcddde;
-  outline: none;
-  transition: background-color 0.15s ease;
-  min-width: 0;
 }
-
-#message-input::placeholder {
-  color: #72767d;
-}
-
-#message-input:focus {
-  background-color: #4f545c;
-}
-
 #message-form button {
   background-color: #5865f2;
+  color: white;
   border: none;
-  color: white;
-  font-weight: 700;
-  padding: 0.65rem 1.5rem;
   border-radius: 20px;
+  padding: 0.65rem 1.5rem;
+  font-weight: 700;
   cursor: pointer;
-  transition: background-color 0.15s ease;
-  font-size: 1rem;
 }
 
-#message-form button:hover {
-  background-color: #4752c4;
-}
-
-/* DM User List */
-#user-list li {
-  padding: 0.75rem 1rem;
-  border-radius: 6px;
-  cursor: pointer;
-  color: #b9bbbe;
-  transition: background-color 0.25s ease, color 0.25s ease;
-  user-select: none;
-  margin-bottom: 0.3rem;
-}
-
-#user-list li:hover {
-  background-color: #5865f2;
-  color: white;
-  box-shadow: 0 2px 8px rgba(88, 101, 242, 0.5);
-}
-
-/* Responsive Design */
+/* RESPONSIVE FIXES */
 @media (max-width: 768px) {
   #chat-section {
     flex-direction: column;
@@ -286,47 +177,29 @@ header nav button:hover {
     flex-direction: row;
     overflow-x: auto;
     overflow-y: hidden;
+    white-space: nowrap;
     padding: 0.5rem;
-    box-shadow: none;
-    justify-content: flex-start;
-    align-items: center;
     gap: 0.5rem;
   }
 
-  #sidebar-content {
-    flex-direction: row;
-    flex-wrap: nowrap;
-    gap: 0.5rem;
-  }
-
-  #sidebar h2,
-  #profile {
+  #sidebar h2 {
     display: none;
   }
 
   #chat-window {
-    height: calc(100vh - 64px - 64px); /* header + sidebar */
-    padding: 0.75rem;
-  }
-
-  #messages li {
-    max-width: 100%;
-    font-size: 0.9rem;
+    height: calc(100vh - 64px - 72px); /* header + sidebar */
   }
 
   #message-form {
     flex-direction: column;
-    gap: 0.5rem;
   }
 
-  #message-form button,
-  #message-input {
+  #message-input,
+  #message-form button {
     width: 100%;
   }
 
-  header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
+  #messages li {
+    max-width: 100%;
   }
 }
