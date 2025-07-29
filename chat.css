@@ -133,10 +133,18 @@ header nav button:hover {
   word-wrap: break-word;
   font-size: 0.95rem;
 }
+#messages li:hover {
+  background-color: #f5f5f5;
+}
 #messages li.self {
   background-color: #f0f0f0;
   color: black;
   margin-left: auto;
+}
+
+#messages li.self:hover {
+  background-color: #f5f5f5;
+  color: white;
 }
 
 /* MESSAGE FORM */
@@ -162,6 +170,12 @@ header nav button:hover {
   border-radius: 20px;
   padding: 0.65rem 1.5rem;
   font-weight: 700;
+  cursor: pointer;
+}
+
+/* Hover highlight for DM list items */
+.sidebar .dm:hover {
+  background-color: #e6f0ff;
   cursor: pointer;
 }
 
