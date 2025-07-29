@@ -5,16 +5,18 @@
   box-sizing: border-box;
 }
 
-body, html {
+html, body {
   height: 100%;
   background-color: #36393f;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   color: #dcddde;
+  min-width: 320px;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  min-width: 300px;
 }
 
+/* Header */
 header {
   background-color: #2f3136;
   padding: 1rem 2rem;
@@ -34,8 +36,8 @@ header {
 header nav {
   display: flex;
   gap: 1rem;
-  align-items: center;
   flex-wrap: wrap;
+  align-items: center;
 }
 
 header nav a {
@@ -64,24 +66,27 @@ header nav button:hover {
   background-color: #5b6eae;
 }
 
+/* Main Layout */
 #chat-section {
-  display: flex;
-  height: calc(100vh - 60px);
-  overflow: hidden;
   flex-grow: 1;
+  display: flex;
+  flex-direction: row;
+  height: calc(100vh - 64px); /* Adjust if header size changes */
+  overflow: hidden;
 }
 
 /* Sidebar */
 #sidebar {
   width: 240px;
+  min-width: 200px;
   background-color: #2f3136;
   padding: 1rem;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  box-shadow: inset -1px 0 0 rgba(79,84,92,0.5);
-  user-select: none;
   overflow-y: auto;
+  box-shadow: inset -1px 0 0 rgba(79, 84, 92, 0.5);
+  user-select: none;
 }
 
 #sidebar-content {
@@ -99,7 +104,8 @@ header nav button:hover {
   margin-bottom: 1rem;
 }
 
-#sidebar button {
+#sidebar button,
+.sidebar-link {
   background: transparent;
   border: none;
   color: #b9bbbe;
@@ -112,6 +118,7 @@ header nav button:hover {
 }
 
 #sidebar button:hover,
+.sidebar-link:hover,
 #sidebar button.active {
   background-color: #393c43;
   color: white;
@@ -130,7 +137,7 @@ header nav button:hover {
   align-items: center;
   justify-content: center;
   margin-bottom: 1rem;
-  box-shadow: 0 2px 6px rgba(114,137,218,0.7);
+  box-shadow: 0 2px 6px rgba(114, 137, 218, 0.7);
   transition: background-color 0.3s ease;
 }
 
@@ -138,39 +145,39 @@ header nav button:hover {
   background-color: #5b6eae;
 }
 
-.sidebar-link {
-  display: block;
-  background: transparent;
-  color: #b9bbbe;
-  font-size: 1rem;
+#profile {
+  background-color: #292b2f;
   padding: 0.75rem 1rem;
-  border-radius: 4px;
-  text-decoration: none;
-  cursor: pointer;
-  transition: background-color 0.15s ease;
+  border-radius: 8px;
+  text-align: center;
+  margin-top: auto;
+  box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
 }
 
-.sidebar-link:hover {
-  background-color: #393c43;
-  color: white;
+#profile h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #dcddde;
+  margin: 0;
+  word-break: break-word;
 }
 
-/* Chat window */
+/* Chat Window */
 #chat-window {
   flex-grow: 1;
   background-color: #36393f;
   display: flex;
   flex-direction: column;
   padding: 1rem 1.5rem;
-  position: relative;
+  overflow: hidden;
 }
 
-/* Messages container */
+/* Messages */
 #messages {
   flex-grow: 1;
   overflow-y: auto;
-  margin-bottom: 1rem;
   list-style: none;
+  margin-bottom: 1rem;
   padding-right: 10px;
   scroll-behavior: smooth;
 }
@@ -188,11 +195,9 @@ header nav button:hover {
 }
 
 #messages li:hover {
-  transition: 0.3s ease;
   background-color: #202225;
 }
 
-/* Messages sent by current user */
 #messages li.self {
   background-color: #f0f0f0;
   color: black;
@@ -206,14 +211,13 @@ header nav button:hover {
   color: white;
 }
 
-/* Message input form */
+/* Input Form */
 #message-form {
   display: flex;
   gap: 0.75rem;
-  padding-top: 0.3rem;
   border-top: 1px solid #202225;
   flex-shrink: 0;
-  flex-wrap: wrap;
+  padding-top: 0.3rem;
 }
 
 #message-input {
@@ -253,24 +257,7 @@ header nav button:hover {
   background-color: #4752c4;
 }
 
-#profile {
-  background-color: #292b2f;
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  text-align: center;
-  margin-top: auto;
-  box-shadow: 0 -1px 2px rgba(0,0,0,0.2);
-}
-
-#profile h3 {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: #dcddde;
-  margin: 0;
-  word-break: break-word;
-}
-
-/* DM user list */
+/* DM User List */
 #user-list li {
   padding: 0.75rem 1rem;
   border-radius: 6px;
@@ -287,7 +274,7 @@ header nav button:hover {
   box-shadow: 0 2px 8px rgba(88, 101, 242, 0.5);
 }
 
-/* Responsive Layout */
+/* Responsive Design */
 @media (max-width: 768px) {
   #chat-section {
     flex-direction: column;
@@ -318,6 +305,7 @@ header nav button:hover {
   }
 
   #chat-window {
+    height: calc(100vh - 64px - 64px); /* header + sidebar */
     padding: 0.75rem;
   }
 
@@ -331,23 +319,14 @@ header nav button:hover {
     gap: 0.5rem;
   }
 
-  #message-form button {
-    width: 100%;
-  }
-
+  #message-form button,
   #message-input {
     width: 100%;
-    font-size: 1rem;
   }
 
   header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 0.5rem;
-  }
-
-  header nav {
-    flex-wrap: wrap;
     gap: 0.5rem;
   }
 }
