@@ -1,38 +1,37 @@
-/* Reset */
+/* RESET */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-body, html {
+html, body {
   height: 100%;
-  background-color: #36393f;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #36393f;
   color: #dcddde;
-  display: flex;
-  flex-direction: column;
 }
 
+/* HEADER */
 header {
   background-color: #2f3136;
   padding: 1rem 2rem;
   font-weight: 700;
   font-size: 1.5rem;
   color: white;
-  flex-shrink: 0;
   user-select: none;
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.3);
-
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 header nav {
   display: flex;
   gap: 1rem;
-  align-items: center;
+  flex-wrap: wrap;
 }
 
 header nav a {
@@ -41,11 +40,9 @@ header nav a {
   font-weight: 600;
   transition: color 0.2s ease;
 }
-
 header nav a:hover {
   color: #99aab5;
 }
-
 header nav button {
   background-color: #7289da;
   border: none;
@@ -56,122 +53,77 @@ header nav button {
   font-weight: bold;
   transition: background-color 0.2s ease;
 }
-
 header nav button:hover {
   background-color: #5b6eae;
 }
 
+/* MAIN CHAT LAYOUT */
 #chat-section {
   display: flex;
-  height: calc(100vh - 60px); /* header height */
+  flex-direction: row;
+  height: calc(100vh - 64px); /* header height */
   overflow: hidden;
-  flex-grow: 1;
 }
 
-/* Sidebar */
+/* SIDEBAR */
 #sidebar {
   width: 240px;
   background-color: #2f3136;
   padding: 1rem;
   display: flex;
   flex-direction: column;
-  justify-content: space-between; /* Pushes profile to bottom */
-  box-shadow: inset -1px 0 0 rgba(79,84,92,0.5);
-  user-select: none;
   overflow-y: auto;
+  flex-shrink: 0;
 }
-
-#sidebar-content {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
 #sidebar h2 {
   font-size: 1.4rem;
-  font-weight: 700;
   color: white;
-  border-bottom: 1px solid #202225;
-  padding-bottom: 0.3rem;
   margin-bottom: 1rem;
 }
-
 #sidebar button {
-  background: transparent;
+  background: none;
   border: none;
   color: #b9bbbe;
-  font-size: 1rem;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
+  padding: 0.75rem 1rem;
   text-align: left;
+  border-radius: 4px;
   cursor: pointer;
-  transition: background-color 0.15s ease;
 }
-
-#sidebar button:hover,
-#sidebar button.active {
+#sidebar button:hover {
   background-color: #393c43;
   color: white;
 }
-
-#sidebar button#new-chat {
-  font-size: 1.5rem;
-  font-weight: 700;
+#sidebar #new-chat {
+  background-color: #7289da;
+  color: white;
   width: 40px;
   height: 40px;
-  padding: 0;
   border-radius: 50%;
-  background-color: #7289da;
-  color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-weight: bold;
   margin-bottom: 1rem;
-  box-shadow: 0 2px 6px rgba(114,137,218,0.7);
-  transition: background-color 0.3s ease;
 }
 
-#sidebar button#new-chat:hover {
-  background-color: #5b6eae;
-}
-
-.sidebar-link {
-  display: block;
-  background: transparent;
-  color: #b9bbbe;
-  font-size: 1rem;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  text-decoration: none;
-  cursor: pointer;
-  transition: background-color 0.15s ease;
-}
-
-.sidebar-link:hover {
-  background-color: #393c43;
-  color: white;
-}
-
-/* Chat window */
+/* CHAT WINDOW */
 #chat-window {
   flex-grow: 1;
   background-color: #36393f;
   display: flex;
   flex-direction: column;
-  padding: 1rem 1.5rem;
-  position: relative;
+  padding: 1rem;
+  overflow: hidden;
 }
 
-/* Messages container */
+/* MESSAGES */
 #messages {
   flex-grow: 1;
   overflow-y: auto;
   margin-bottom: 1rem;
   list-style: none;
   padding-right: 10px;
-  scroll-behavior: smooth;
 }
-
 #messages li {
   padding: 0.5rem 0.75rem;
   margin-bottom: 0.6rem;
@@ -180,23 +132,15 @@ header nav button:hover {
   max-width: 75%;
   word-wrap: break-word;
   font-size: 0.95rem;
-  line-height: 1.3;
-  color: #dcddde;
 }
-
 #messages li:hover {
   transition: 0.3s ease;
   background-color: #202225;
-  color: black;
 }
-
-/* Messages sent by current user */
 #messages li.self {
   background-color: #f0f0f0;
   color: black;
   margin-left: auto;
-  border-bottom-right-radius: 2px;
-  border-bottom-left-radius: 8px;
 }
 
 #messages li.self:hover {
@@ -205,15 +149,13 @@ header nav button:hover {
   color: black;
 }
 
-/* Message input form */
+/* MESSAGE FORM */
 #message-form {
   display: flex;
   gap: 0.75rem;
-  padding-top: 0.3rem;
   border-top: 1px solid #202225;
-  flex-shrink: 0;
+  padding-top: 0.5rem;
 }
-
 #message-input {
   flex-grow: 1;
   background-color: #40444b;
@@ -222,67 +164,58 @@ header nav button:hover {
   padding: 0.65rem 1rem;
   font-size: 1rem;
   color: #dcddde;
-  outline: none;
-  transition: background-color 0.15s ease;
 }
-
-#message-input::placeholder {
-  color: #72767d;
-}
-
-#message-input:focus {
-  background-color: #4f545c;
-}
-
 #message-form button {
   background-color: #5865f2;
+  color: white;
   border: none;
-  color: white;
-  font-weight: 700;
-  padding: 0.65rem 1.5rem;
   border-radius: 20px;
+  padding: 0.65rem 1.5rem;
+  font-weight: 700;
   cursor: pointer;
-  transition: background-color 0.15s ease;
-  font-size: 1rem;
 }
 
-#message-form button:hover {
-  background-color: #4752c4;
-}
-
-#profile {
-  background-color: #292b2f;
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  text-align: center;
-  margin-top: 40rem;
-  box-shadow: 0 -1px 2px rgba(0,0,0,0.2);
-}
-
-#profile h3 {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: #dcddde;
-  margin: 0;
-  word-break: break-word;
-}
-
-/* DMs */
-/* Assuming your usernames in the DMs sidebar are buttons or list items with class .dm-user */
-/* Style for each user item in the sidebar */
-#user-list li {
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
+/* Hover highlight for DM list items */
+.sidebar .dm:hover {
+  background-color: #e6f0ff;
   cursor: pointer;
-  color: #b9bbbe;
-  transition: background-color 0.25s ease, color 0.25s ease;
-  user-select: none;
-  margin-bottom: 0.3rem;
 }
 
-/* Hover effect */
-#user-list li:hover {
-  background-color: #5865f2; /* bright blue */
-  color: white;
-  box-shadow: 0 2px 8px rgba(88, 101, 242, 0.5);
+/* RESPONSIVE FIXES */
+@media (max-width: 768px) {
+  #chat-section {
+    flex-direction: column;
+    height: auto;
+  }
+
+  #sidebar {
+    width: 100%;
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+    padding: 0.5rem;
+    gap: 0.5rem;
+  }
+
+  #sidebar h2 {
+    display: none;
+  }
+
+  #chat-window {
+    height: calc(100vh - 64px - 72px); /* header + sidebar */
+  }
+
+  #message-form {
+    flex-direction: column;
+  }
+
+  #message-input,
+  #message-form button {
+    width: 100%;
+  }
+
+  #messages li {
+    max-width: 100%;
+  }
 }
