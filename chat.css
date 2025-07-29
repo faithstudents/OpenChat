@@ -187,6 +187,7 @@ header nav button:hover {
 #messages li:hover {
   transition: 0.3s ease;
   background-color: #202225;
+  color: black;
 }
 
 /* Messages sent by current user */
@@ -201,7 +202,7 @@ header nav button:hover {
 #messages li.self:hover {
   transition: 0.3s ease;
   background-color: #202225;
-  color: white;
+  color: black;
 }
 
 /* Message input form */
