@@ -10,6 +10,7 @@ html, body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background-color: #36393f;
   color: #dcddde;
+  overflow: hidden;
 }
 
 /* HEADER */
@@ -68,6 +69,7 @@ header nav button:hover {
 /* SIDEBAR */
 #sidebar {
   width: 240px;
+  height: 100%;
   background-color: #2f3136;
   padding: 1rem;
   display: flex;
@@ -114,15 +116,17 @@ header nav button:hover {
   flex-direction: column;
   padding: 1rem;
   overflow: hidden;
+  height: 100%;
+  padding-bottom: 1rem;
 }
 
 /* MESSAGES */
 #messages {
   flex-grow: 1;
   overflow-y: auto;
-  margin-bottom: 1rem;
   list-style: none;
   padding-right: 10px;
+  margin-bottom: 0;
 }
 #messages li {
   padding: 0.5rem 0.75rem;
@@ -142,11 +146,10 @@ header nav button:hover {
   color: black;
   margin-left: auto;
 }
-
 #messages li.self:hover {
   transition: 0.3s ease;
   background-color: #202225;
-  color: black;
+  color: white;
 }
 
 /* MESSAGE FORM */
@@ -154,7 +157,7 @@ header nav button:hover {
   display: flex;
   gap: 0.75rem;
   border-top: 1px solid #202225;
-  padding-top: 0.5rem;
+  padding: 0.5rem 0 0.5rem 0;
 }
 #message-input {
   flex-grow: 1;
@@ -164,6 +167,7 @@ header nav button:hover {
   padding: 0.65rem 1rem;
   font-size: 1rem;
   color: #dcddde;
+  padding: 0.5rem;
 }
 #message-form button {
   background-color: #5865f2;
@@ -173,6 +177,7 @@ header nav button:hover {
   padding: 0.65rem 1.5rem;
   font-weight: 700;
   cursor: pointer;
+  margin-top: auto;
 }
 
 /* Hover highlight for DM list items */
