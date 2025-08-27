@@ -443,7 +443,11 @@ async function appendMessage(msg) {
     messagesList.appendChild(li)
 
     const userInfo = await getUserInfo(msg.user_id);
-    if (msg.user_id !== user.id && Notification.permission === "granted") {
+    if (
+        msg.user_id !== user.id &&
+        Notification.permission === "granted" &&
+        document.hidden // <-- only show if page is not visible
+    ) {
         new Notification("OpenChat ~ " + userInfo.username, { body: msg.content })
     }
 
