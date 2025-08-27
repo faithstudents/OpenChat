@@ -107,6 +107,16 @@ async function fetchNewMessages() {
     }
 
     messagesList.appendChild(fragment)
+
+    // create a new notification and send it
+    Notification.requestPermision().then((perm) => {
+        console.log(perm);
+    });
+
+    const notification = new Notification("OpenChat ~ " + msg.username, {
+        body: msg.content,
+    });
+    
     scrollToBottom()
 }
 
