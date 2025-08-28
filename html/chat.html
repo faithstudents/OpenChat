@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Enable Web App Mode -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+
+  <!-- Set the status bar style (black-translucent is most common) -->
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+  <!-- App Title for Home Screen -->
+  <meta name="apple-mobile-web-app-title" content="OpenChat Mobile">
+  <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/openchat.jpeg">
+  <link rel="icon" type="image/jpeg" sizes="192x192" href="../assets/images/openchat.jpeg">
+
+
+  <title>OpenChat</title>
+  <link rel="stylesheet" href="../css/chat.css" />
+</head>
+<body>
+  <header>
+    <h1>OpenChat</h1>
+    <nav style="margin-left: auto; display: flex; gap: 1rem;">
+      <a href="rules.html" style="color: #7289da; text-decoration: none; font-weight: 600;">Rules</a>
+      <button id="logout-btn" style="background: #7289da; border: none; color: white; padding: 0.5rem 1rem; border-radius: 5px; cursor: pointer;">
+        Logout
+      </button>
+    </nav>
+  </header>
+
+  <div id="chat-section">
+    <aside id="sidebar">
+      <h2>Chats</h2>
+      <button id="new-chat">+</button>
+      <a href="dms.html" class="sidebar-link">DMs</a>
+      <button id="main-chat" class="active">Faith Chat</button>
+
+        <div id="profile">
+            <img id="profile-avatar" src="../assets/images/default-avatar.png" alt="Avatar">
+            <div class="profile-info">
+                <span id="profile-username">Loading...</span>
+                <span class="profile-status">Online</span>
+            </div>
+            <div id="profile-edit" style="margin-top: 8px; display: none;">
+                <input type="text" id="new-username" placeholder="New display name" />
+                <button id="save-username">Save</button>
+            </div>
+            <button id="edit-username-btn">✏️ Edit</button>
+        </div>
+    </aside>
+
+      <!-- Profile Modal -->
+      <div id="profile-modal" class="modal">
+          <div class="modal-content">
+              <span id="close-profile-modal" class="close">&times;</span>
+
+              <!-- Profile Info Top -->
+              <div class="profile-top">
+                  <img id="modal-avatar" src="../assets/images/default-avatar.png" alt="Avatar">
+                  <h2 id="modal-username">Loading...</h2>
+                  <p id="modal-status">Online</p>
+              </div>
+
+              <!-- Profile Description -->
+              <div class="profile-desc">
+                  <p id="modal-description">This is your description.</p>
+              </div>
+
+              <!-- Settings icon at bottom -->
+              <div class="profile-settings">
+                  <span id="open-settings" class="settings-icon">⚙️</span>
+              </div>
+          </div>
+      </div>
+
+      <!-- Settings Modal (nested) -->
+      <div id="settings-modal" class="modal">
+          <div class="modal-content">
+              <span id="close-settings" class="close">&times;</span>
+              <h3>Change Display Name</h3>
+              <input type="text" id="settings-username-input" placeholder="New display name">
+              <div class="settings-buttons">
+                  <button id="settings-save-btn">Save</button>
+                  <button id="settings-cancel-btn">Cancel</button>
+              </div>
+          </div>
+      </div>
+
+      <main id="chat-window">
+      <ul id="messages"></ul>
+
+        <form id="message-form">
+            <label for="image-input" id="upload-image-btn">+</label>
+            <input type="file" id="image-input" accept="image/*" style="display: none;" />
+
+            <input
+                    type="text"
+                    id="message-input"
+                    placeholder="Message @Faith Chat"
+                    autocomplete="off"
+                    required
+            />
+            <button type="submit">Send</button>
+        </form>
+    </main>
+  </div>
+
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+    const supabase = createClient(
+      'https://htwevjqqqyojcbgeevqy.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh0d2V2anFxcXlvamNiZ2VldnF5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMzMDg0NzYsImV4cCI6MjA2ODg4NDQ3Nn0.lszlnu4aWcDRAhp_MjJaECRFzGYze_uP7GhfWszA6fY'
+    )
+
+    const logoutBtn = document.getElementById('logout-btn')
+    logoutBtn.addEventListener('click', async () => {
+      await supabase.auth.signOut()
+      window.location.href = 'index.html'
+    })
+  </script>
+
+  <script type="module" src="../js/master.js"></script>
+</body>
+</html>
