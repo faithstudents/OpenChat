@@ -12,7 +12,7 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
     // Simulated async login check:
     if (email === 'test@example.com' && password === 'password123') {
       alert('Login successful! Redirecting...');
-      window.location.href = 'chat.html'; // Redirect to chat page
+      window.location.href = 'html/chat.html'; // Redirect to chat page
     } else {
       throw new Error('Invalid email or password');
     }

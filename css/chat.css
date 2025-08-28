@@ -250,6 +250,19 @@ header nav button:hover {
     background-color: #4f545c;
 }
 
+.message-username {
+    font-weight: 600;
+    color: #00aaff;   /* pick your theme color */
+    cursor: pointer;
+    display: inline-block;
+    transition: color 0.2s ease;
+}
+
+.message-username:hover {
+    text-decoration: underline;
+    color: #66ccff;  /* lighter hover color */
+}
+
 /* MESSAGE FORM */
 #message-form {
     display: flex;

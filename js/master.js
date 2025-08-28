@@ -25,7 +25,9 @@ let lastFetchedTimestamp = null
 let earliestFetchedTimestamp = null
 let isLoadingOlderMessages = false
 
-const PAGE_SIZE = 20 // Number of messages per page
+const PAGE_SIZE = 40 // Number of messages per page
+
+let unreadCount = 0;
 
 init()
 
@@ -172,7 +174,10 @@ function setupInfiniteScroll() {
 
 async function createMessageElement(msg) {
     const userInfo = await getUserInfo(msg.user_id)
-    const userName = msg.user_id === user.id ? 'You' : userInfo.username
+
+    // if message is mine, show my display name, else use their username
+    const selfInfo = await getUserInfo(user.id)
+    const userName = msg.user_id === user.id ? selfInfo.username : userInfo.username
 
     const li = document.createElement('li')
     li.classList.add('message')
@@ -181,25 +186,37 @@ async function createMessageElement(msg) {
     const contentDiv = document.createElement('div')
     contentDiv.classList.add('message-content')
 
+    // --- username on top ---
+    const usernameEl = document.createElement('div')
+    usernameEl.classList.add('message-username')
+    usernameEl.textContent = userName
+    usernameEl.style.color = '#48BB78';
+
+    // --- message text / image ---
+    const textEl = document.createElement('div')
+    textEl.classList.add('message-text')
+
     if (msg.content.startsWith('__img__')) {
         const imageUrl = msg.content.replace('__img__', '')
-        contentDiv.innerHTML = `<strong>${userName}:</strong><br><img src="${imageUrl}" alt="Image" style="max-width: 300px; border-radius: 8px; margin-top: 5px;" />`
+        textEl.innerHTML = `<img src="${imageUrl}" alt="Image" style="max-width: 300px; border-radius: 8px; margin-top: 5px;" />`
     } else {
-        const parsedContent = parseLinks(msg.content)
-        contentDiv.innerHTML = `<strong>${userName}:</strong> ${parsedContent}`
+        textEl.innerHTML = parseLinks(msg.content)
     }
 
+    // put username above text
+    contentDiv.appendChild(usernameEl)
+    contentDiv.appendChild(textEl)
     li.appendChild(contentDiv)
 
     // --- reactions ---
     const reactionsDiv = document.createElement('div')
     reactionsDiv.classList.add('reactions')
 
-    const emojis = ["😀","❤️","👍","👎", "💀", "🤣", "😆", "😂"]
+    const emojis = ["😀","❤️","👍","👎","💀","🤣","😆","😂"]
     emojis.forEach(emoji => {
         const btn = document.createElement('button')
         btn.textContent = emoji
-        btn.dataset.emoji = emoji  // store emoji for highlighting
+        btn.dataset.emoji = emoji
 
         btn.addEventListener('click', async () => {
             await toggleReaction(msg.id, emoji)
@@ -208,16 +225,14 @@ async function createMessageElement(msg) {
         reactionsDiv.appendChild(btn)
     })
 
-    // display current reactions
     const reactionDisplay = document.createElement('span')
     reactionDisplay.classList.add('reaction-display')
     reactionsDiv.appendChild(reactionDisplay)
 
     li.appendChild(reactionsDiv)
-
     loadReactions(msg.id, reactionDisplay)
 
-    // --- admin tools (as before) ---
+    // --- admin tools ---
     if (currentUserRole === "admin" && msg.user_id !== user.id) {
         const adminDiv = document.createElement('div')
         adminDiv.classList.add('admin-tools')
@@ -443,9 +458,23 @@ async function appendMessage(msg) {
     messagesList.appendChild(li)
 
     const userInfo = await getUserInfo(msg.user_id);
-    if (msg.user_id !== user.id && Notification.permission === "granted") {
-        new Notification("OpenChat ~ " + userInfo.username, { body: msg.content })
+    // Only notify if tab not focused
+    if (msg.user_id !== user.id && document.hidden) {
+        unreadCount++
+        updateFavicon(unreadCount)
+
+        if (Notification.permission === "granted") {
+            new Notification("OpenChat ~ " + userInfo.username, { body: msg.content })
+        }
+        messageSound.play().catch(() => {})
     }
+
+    document.addEventListener("visibilitychange", () => {
+        if (!document.hidden) {
+            unreadCount = 0
+            updateFavicon(0)
+        }
+    })
 
     scrollToBottom()
 }
@@ -597,3 +626,44 @@ settingsSaveBtn.addEventListener('click', async () => {
 
     settingsModal.style.display = 'none'
 })
+
+function updateFavicon(unread) {
+    const size = 64
+    const canvas = document.createElement("canvas")
+    canvas.width = size
+    canvas.height = size
+    const ctx = canvas.getContext("2d")
+
+    const baseIcon = new Image()
+    baseIcon.crossOrigin = "anonymous" // avoid tainting if hosted elsewhere
+    baseIcon.src = "/assets/images/openchat.jpeg" // your default favicon
+
+    baseIcon.onload = () => {
+        // draw original favicon
+        ctx.drawImage(baseIcon, 0, 0, size, size)
+
+        if (unread > 0) {
+            // red badge
+            ctx.beginPath()
+            ctx.arc(size - 16, 16, 14, 0, 2 * Math.PI)
+            ctx.fillStyle = "#FF0000"
+            ctx.fill()
+
+            ctx.fillStyle = "#fff"
+            ctx.font = "bold 28px Arial"
+            ctx.textAlign = "center"
+            ctx.textBaseline = "middle"
+            ctx.fillText(unread > 9 ? "9+" : unread, size - 16, 16)
+        }
+
+        // remove old favicons
+        document.querySelectorAll("link[rel~='icon']").forEach(el => el.remove())
+
+        // inject new one
+        const newFavicon = document.createElement("link")
+        newFavicon.rel = "icon"
+        newFavicon.type = "image/png"
+        newFavicon.href = canvas.toDataURL("image/png")
+        document.head.appendChild(newFavicon)
+    }
+}
