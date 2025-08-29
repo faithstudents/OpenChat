@@ -39,6 +39,12 @@ dmsButton.addEventListener("click", () => {
     window.location.href = "dms.html";
 });
 
+document.addEventListener("submit", e => {
+  if (e.target.id === "message-form") {
+    e.preventDefault();
+  }
+});
+
 async function init() {
     const { data: { session }, error } = await supabase.auth.getSession()
     if (error || !session) {
