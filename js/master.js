@@ -17,6 +17,8 @@ const dmSound = new Audio('dm.mp3');
 const imageInput = document.getElementById('image-input')
 const uploadImageBtn = document.getElementById('upload-image-btn')
 
+const dmsButton = document.getElementById("dms_button");
+
 const isOnDMPage = window.location.pathname.includes('dms.html');
 
 let user = null
@@ -32,6 +34,10 @@ let unreadCount = 0;
 init()
 
 let currentUserRole = "user" // default
+
+dmsButton.addEventListener("click", () => {
+    window.location.href = "dms.html";
+});
 
 async function init() {
     const { data: { session }, error } = await supabase.auth.getSession()
@@ -409,15 +415,19 @@ function subscribeToNewMessages() {
             table: 'messages'
         },
         async (payload) => {
-            console.log('New message payload:', payload) // <-- see if anything logs
-            await appendMessage(payload.new)
-            lastFetchedTimestamp = payload.new.created_at
+            console.log('New message payload:', payload)
+
+            // Only handle public messages
+            if (payload.new.dm_to === null) {
+                await appendMessage(payload.new)
+                lastFetchedTimestamp = payload.new.created_at
+            }
         }
     )
 
     channel.subscribe((status) => {
         if (status === 'SUBSCRIBED') {
-            console.log('Subscribed to live messages!')
+            console.log('Subscribed to live public messages!')
         } else if (status === 'ERROR') {
             console.error('Subscription failed.')
         }
