@@ -409,9 +409,13 @@ function subscribeToNewMessages() {
             table: 'messages'
         },
         async (payload) => {
-            console.log('New message payload:', payload) // <-- see if anything logs
-            await appendMessage(payload.new)
-            lastFetchedTimestamp = payload.new.created_at
+            const message = payload.new
+    
+            // ✅ Only show non-DM messages
+            if (message.dm_to === null) {
+                await appendMessage(message)
+                lastFetchedTimestamp = message.created_at
+            }
         }
     )
 
