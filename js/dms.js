@@ -13,170 +13,176 @@ const logoutBtn = document.getElementById('logout-btn')
 
 let user = null
 let selectedUser = null
-let lastFetchedTimestamp = null
+let messageSubscription = null
+let oldestTimestamp = null
+let loadingOlderMessages = false
+
+const MESSAGE_LIMIT = 30
 
 init()
 
 async function init() {
-  const { data: { session }, error } = await supabase.auth.getSession()
-  if (error || !session) {
-    window.location.href = '../index.html'
-    return
-  }
-  user = session.user
+    const { data: { session }, error } = await supabase.auth.getSession()
+    if (error || !session) {
+        window.location.href = '../index.html'
+        return
+    }
+    user = session.user
 
-  backToChatBtn.addEventListener('click', () => {
-    window.location.href = 'chat.html'
-  })
+    await supabase.realtime.connect()
 
-  logoutBtn.addEventListener('click', async () => {
-    await supabase.auth.signOut()
-    window.location.href = 'index.html'
-  })
+    backToChatBtn.addEventListener('click', () => window.location.href = 'chat.html')
+    logoutBtn.addEventListener('click', async () => {
+        await supabase.auth.signOut()
+        window.location.href = 'index.html'
+    })
 
-  await loadUsers()
-  startPollingMessages()
+    messagesList.addEventListener('scroll', loadOlderMessagesOnScroll)
+    await loadUsers()
 }
 
 function parseLinks(text) {
-  const urlRegex = /((https?:\/\/)?([\w\-]+\.)+[a-z]{2,}(\/[\w\-./?%&=]*)?)/gi
-  return text.replace(urlRegex, (match) => {
-    let url = match
-    if (!url.startsWith('http')) {
-      url = 'https://' + url
-    }
-    return `<a href="${url}" target="_blank" style="color: #00aff4; text-decoration: underline;">${match}</a>`
-  })
+    const urlRegex = /((https?:\/\/)?([\w\-]+\.)+[a-z]{2,}(\/[\w\-./?%&=]*)?)/gi
+    return text.replace(urlRegex, (match) => {
+        let url = match.startsWith('http') ? match : `https://${match}`
+        return `<a href="${url}" target="_blank" style="color: #00aff4; text-decoration: underline;">${match}</a>`
+    })
 }
 
 async function loadUsers() {
-  // Load all users except current user
-  const { data: profiles, error } = await supabase
-    .from('profiles')
-    .select('id, username')
-    .neq('id', user.id)
+    const { data: profiles, error } = await supabase
+        .from('profiles')
+        .select('id, username')
+        .neq('id', user.id)
 
-  if (error) {
-    alert('Failed to load users: ' + error.message)
-    return
-  }
+    if (error) return alert('Failed to load users: ' + error.message)
 
-  userListEl.innerHTML = ''
-  for (const profile of profiles) {
-    const li = document.createElement('li')
-    li.textContent = profile.username
-    li.style.cursor = 'pointer'
-    li.style.padding = '0.5rem 0'
-    li.addEventListener('click', () => {
-      selectUser(profile)
+    userListEl.innerHTML = ''
+    profiles.forEach(profile => {
+        const li = document.createElement('li')
+        li.textContent = profile.username
+        li.style.cursor = 'pointer'
+        li.style.padding = '0.5rem 0'
+        li.addEventListener('click', () => selectUser(profile))
+        userListEl.appendChild(li)
     })
-    userListEl.appendChild(li)
-  }
 }
 
 function selectUser(profile) {
-  selectedUser = profile
-  lastFetchedTimestamp = null
-  messagesList.innerHTML = ''
-  loadMessages()
+    selectedUser = profile
+    messagesList.innerHTML = ''
+    oldestTimestamp = null
+    removeSubscription()
+    loadInitialMessages()
+    subscribeToMessages()
 }
 
-async function loadMessages() {
-  if (!selectedUser) return
+async function loadInitialMessages() {
+    if (!selectedUser) return
 
-  const { data, error } = await supabase
-    .from('messages')
-    .select('id, content, user_id, created_at')
-    .or(`and(user_id.eq.${user.id},dm_to.eq.${selectedUser.id}),and(user_id.eq.${selectedUser.id},dm_to.eq.${user.id})`)
-    .order('created_at', { ascending: true })
+    const { data, error } = await supabase
+        .from('messages')
+        .select('id, content, user_id, created_at')
+        .or(`and(user_id.eq.${user.id},dm_to.eq.${selectedUser.id}),and(user_id.eq.${selectedUser.id},dm_to.eq.${user.id})`)
+        .order('created_at', { ascending: false })
+        .limit(MESSAGE_LIMIT)
 
-  if (error) {
-    alert('Failed to load messages: ' + error.message)
-    return
-  }
+    if (error) return alert('Failed to load messages: ' + error.message)
 
-  messagesList.innerHTML = ''
-  for (const msg of data) {
-    await appendMessage(msg)
-  }
-
-  if (data.length > 0) {
-    lastFetchedTimestamp = data[data.length - 1].created_at
-  }
-
-  scrollToBottom()
+    const messages = data.reverse()
+    for (const msg of messages) await appendMessage(msg)
+    oldestTimestamp = messages[0]?.created_at || null
+    scrollToBottom()
 }
 
-async function fetchNewMessages() {
-  if (!selectedUser || !lastFetchedTimestamp) return
+async function loadOlderMessagesOnScroll() {
+    if (messagesList.scrollTop !== 0 || loadingOlderMessages || !oldestTimestamp) return
+    loadingOlderMessages = true
 
-  const { data, error } = await supabase
-    .from('messages')
-    .select('id, content, user_id, created_at')
-    .or(`and(user_id.eq.${user.id},dm_to.eq.${selectedUser.id}),and(user_id.eq.${selectedUser.id},dm_to.eq.${user.id})`)
-    .gt('created_at', lastFetchedTimestamp)
-    .order('created_at', { ascending: true })
+    const { data, error } = await supabase
+        .from('messages')
+        .select('id, content, user_id, created_at')
+        .or(`and(user_id.eq.${user.id},dm_to.eq.${selectedUser.id}),and(user_id.eq.${selectedUser.id},dm_to.eq.${user.id})`)
+        .lt('created_at', oldestTimestamp)
+        .order('created_at', { ascending: false })
+        .limit(MESSAGE_LIMIT)
 
-  if (error) {
-    console.error('Error fetching new messages:', error.message)
-    return
-  }
+    if (error) {
+        console.error('Failed to load older messages:', error.message)
+        loadingOlderMessages = false
+        return
+    }
 
-  for (const msg of data) {
-    await appendMessage(msg)
-    lastFetchedTimestamp = msg.created_at
-  }
-
-  scrollToBottom()
+    const prevHeight = messagesList.scrollHeight
+    for (const msg of data.reverse()) await prependMessage(msg)
+    oldestTimestamp = data[0]?.created_at || oldestTimestamp
+    messagesList.scrollTop = messagesList.scrollHeight - prevHeight
+    loadingOlderMessages = false
 }
 
-function startPollingMessages() {
-  setInterval(fetchNewMessages, 500)
+function subscribeToMessages() {
+    if (!selectedUser) return
+
+    messageSubscription = supabase
+        .channel('realtime:dms')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, async (payload) => {
+            const msg = payload.new
+            const isBetweenUsers =
+                (msg.user_id === user.id && msg.dm_to === selectedUser.id) ||
+                (msg.user_id === selectedUser.id && msg.dm_to === user.id)
+
+            if (isBetweenUsers) {
+                await appendMessage(msg)
+                scrollToBottom()
+            }
+        })
+        .subscribe()
+}
+
+function removeSubscription() {
+    if (messageSubscription) {
+        supabase.removeChannel(messageSubscription)
+        messageSubscription = null
+    }
 }
 
 async function appendMessage(msg) {
     const userName = msg.user_id === user.id ? 'You' : selectedUser.username
-    const parsedContent = parseLinks(msg.content)
-
+    const parsed = parseLinks(msg.content)
     const li = document.createElement('li')
-    li.classList.add('message') // uniform styling
-
-    li.innerHTML = `
-        <div class="message-content">
-            <span class="message-username">${userName}</span><br />
-            <span class="message-text">${parsedContent}</span>
-        </div>
-    `
-
+    li.classList.add('message')
+    li.innerHTML = `<div class="message-content"><span class="message-username">${userName}</span><br/><span class="message-text">${parsed}</span></div>`
     messagesList.appendChild(li)
 }
 
-function scrollToBottom() {
-  messagesList.scrollTop = messagesList.scrollHeight
+async function prependMessage(msg) {
+    const userName = msg.user_id === user.id ? 'You' : selectedUser.username
+    const parsed = parseLinks(msg.content)
+    const li = document.createElement('li')
+    li.classList.add('message')
+    li.innerHTML = `<div class="message-content"><span class="message-username">${userName}</span><br/><span class="message-text">${parsed}</span></div>`
+    messagesList.insertBefore(li, messagesList.firstChild)
 }
 
-messageForm.addEventListener('submit', async (e) => {
-  e.preventDefault()
-  if (!selectedUser) {
-    alert('Select a user to chat with')
-    return
-  }
+function scrollToBottom() {
+    messagesList.scrollTop = messagesList.scrollHeight
+}
 
-  const content = messageInput.value.trim()
-  if (!content) return
+messageForm.addEventListener('submit', async e => {
+    e.preventDefault()
+    if (!selectedUser) return alert('Select a user to chat with')
 
-  const { error } = await supabase.from('messages').insert([
-    {
-      content,
-      user_id: user.id,
-      dm_to: selectedUser.id
-    }
-  ])
+    const content = messageInput.value.trim()
+    if (!content) return
 
-  if (error) {
-    alert('Failed to send message: ' + error.message)
-  } else {
+    const { error } = await supabase.from('messages').insert([{
+        content,
+        user_id: user.id,
+        dm_to: selectedUser.id
+    }])
+
+    if (error) return alert('Failed to send message: ' + error.message)
+
     messageInput.value = ''
     messageInput.focus()
-  }
 })
