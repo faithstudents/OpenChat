@@ -5,7 +5,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
 
 const userListEl = document.getElementById('user-list')
-const messagesList = document.getElementById('messages')
+const messagesList = document.getElementById('dms-messages')
 const messageForm = document.getElementById('message-form')
 const messageInput = document.getElementById('message-input')
 const backToChatBtn = document.getElementById('back-to-chat')

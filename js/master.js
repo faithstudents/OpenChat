@@ -8,9 +8,6 @@ const messageForm = document.getElementById('message-form')
 const messageInput = document.getElementById('message-input')
 const profileNameEl = document.getElementById('profile-username')
 const messageSound = new Audio('notification.mp3');
-const imageInput = document.getElementById('image-input')
-const uploadImageBtn = document.getElementById('upload-image-btn')
-const dmsButton = document.getElementById("dms_button");
 const welcomeMsg = document.getElementById("welcome-msg");
 const modalUsername = document.getElementById('modal-username')
 
@@ -27,10 +24,6 @@ let unreadCount = 0;
 init()
 
 let currentUserRole = "user" // default
-
-dmsButton.addEventListener("click", () => {
-    window.location.href = "dms.html";
-});
 
 async function init() {
     const { data: { session }, error } = await supabase.auth.getSession()
@@ -356,28 +349,6 @@ messageForm.addEventListener('submit', async (e) => {
     messageInput.focus()
 })
 
-// Image upload
-uploadImageBtn.addEventListener('click', () => imageInput.click())
-imageInput.addEventListener('change', async (event) => {
-    const file = event.target.files[0]
-    if (!file) return
-
-    const fileExt = file.name.split('.').pop()
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
-    const filePath = `uploads/${fileName}`
-
-    const { error: uploadError } = await supabase.storage.from('images').upload(filePath, file)
-    if (uploadError) return alert('Image upload failed: ' + uploadError.message)
-
-    const { data } = supabase.storage.from('images').getPublicUrl(filePath)
-    const imageMessage = `__img__${data.publicUrl}`
-
-    const { error: insertError } = await supabase.from('messages').insert([{ content: imageMessage, user_id: user.id, dm_to: null }])
-    if (insertError) return alert('Failed to send image message: ' + insertError.message)
-
-    imageInput.value = ''
-})
-
 function updateFavicon(unread) {
     const size = 64
     const canvas = document.createElement("canvas")
@@ -482,4 +453,90 @@ document.addEventListener("DOMContentLoaded", () => {
     cancelBtn.addEventListener("click", () => {
         editForm.style.display = "none";
     });
+});
+
+const dmsButton = document.getElementById("dms_button");
+const mainChatBtn = document.getElementById("main-chat");
+const channelList = document.getElementById("channel-list");
+
+let viewingDMUserId = null; // which user you're chatting with
+
+dmsButton.addEventListener("click", async () => {
+  // Clear and load user list
+  channelList.innerHTML = "<li><strong>Direct Messages</strong></li>";
+
+  const { data: users, error } = await supabase
+    .from("profiles")
+    .select("id, username")
+    .neq("id", user.id); // exclude self
+
+  if (error) {
+    console.error("Error loading users:", error.message);
+    return;
+  }
+
+  users.forEach(u => {
+    const li = document.createElement("li");
+    li.textContent = u.username;
+    li.classList.add("dm-user");
+    li.addEventListener("click", () => loadDMConversation(u.id, u.username));
+    channelList.appendChild(li);
+  });
+
+  dmsButton.classList.add("active");
+  mainChatBtn.classList.remove("active");
+});
+
+mainChatBtn.addEventListener("click", async () => {
+  channelList.innerHTML = "<li><strong>Channels</strong></li>";
+  viewingDMUserId = null;
+  await loadMessages(); // back to public chat
+  mainChatBtn.classList.add("active");
+  dmsButton.classList.remove("active");
+});
+
+// Load messages between logged-in user and target user
+async function loadDMConversation(otherUserId, username) {
+  viewingDMUserId = otherUserId;
+
+  const { data, error } = await supabase
+    .from("messages")
+    .select("id, content, user_id, created_at, dm_to")
+    .or(`and(user_id.eq.${user.id},dm_to.eq.${otherUserId}),and(user_id.eq.${otherUserId},dm_to.eq.${user.id})`)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    console.error("Error loading DM conversation:", error.message);
+    return;
+  }
+
+  messagesList.innerHTML = "";
+  for (const msg of data) {
+    const li = await createMessageElement(msg);
+    messagesList.appendChild(li);
+  }
+
+  scrollToBottom();
+  document.getElementById("message-input").placeholder = `Message @${username}`;
+}
+
+// Intercept send to support DMs
+messageForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const content = messageInput.value.trim();
+  if (!content) return;
+
+  let newMessage = {
+    content,
+    user_id: user.id,
+    dm_to: viewingDMUserId || null // <-- if in DM mode, set target
+  };
+
+  const { error } = await supabase.from("messages").insert([newMessage]);
+  if (error) {
+    alert("Failed to send message: " + error.message);
+    return;
+  }
+
+  messageInput.value = "";
 });
