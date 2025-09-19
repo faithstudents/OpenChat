@@ -108,6 +108,10 @@ header .left-aligned button:hover {
     transform: scale(1.05);
 }
 
+#dms_button {
+    color: #fff;
+}
+
 #sidebar1 button.active:not(#main-chat) {
     background-color: #555b61;
 }
