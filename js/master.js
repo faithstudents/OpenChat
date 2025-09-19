@@ -289,7 +289,11 @@ function subscribeToNewMessages() {
         }
     )
 
-    messageChannel.subscribe()
+    if (messageChannel.subscribe()) {
+        console.log("Subscribed to Supabase Realtime! :D\n");
+    } else {
+        console.log("Unable to Subscribe to Supabase Realtime! :(\n");
+    }
 }
 
 // -------------------- SEND MESSAGE --------------------
