@@ -7,64 +7,52 @@ const messagesList = document.getElementById('messages')
 const messageForm = document.getElementById('message-form')
 const messageInput = document.getElementById('message-input')
 const profileNameEl = document.getElementById('profile-username')
-const messageSound = new Audio('notification.mp3');
-const imageInput = document.getElementById('image-input')
-const uploadImageBtn = document.getElementById('upload-image-btn')
-const dmsButton = document.getElementById("dms_button");
-const welcomeMsg = document.getElementById("welcome-msg");
+const messageSound = new Audio('notification.mp3')
+const welcomeMsg = document.getElementById("welcome-msg")
 const modalUsername = document.getElementById('modal-username')
+const dmsButton = document.getElementById("dms_button")
+const mainChatBtn = document.getElementById("main-chat")
+const channelList = document.getElementById("channel-list")
 
 let user = null
 const userCache = new Map()
 let lastFetchedTimestamp = null
 let earliestFetchedTimestamp = null
 let isLoadingOlderMessages = false
-
-const PAGE_SIZE = 20 // Number of messages per page
-
-let unreadCount = 0;
-
-init()
-
+let unreadCount = 0
+let viewingDMUserId = null
 let currentUserRole = "user" // default
+const PAGE_SIZE = 20 // messages per page
 
-dmsButton.addEventListener("click", () => {
-    window.location.href = "dms.html";
-});
+// -------------------- INIT --------------------
+init()
 
 async function init() {
     const { data: { session }, error } = await supabase.auth.getSession()
-    if (error || !session) {
-        window.location.href = '../index.html'
-        return
-    }
+    if (error || !session) return window.location.href = '../index.html'
 
     user = session.user
 
-    // 🔑 Fetch role before loading messages
+    // Fetch user role
     const { data: roleData, error: roleError } = await supabase
         .from('users')
         .select('role')
         .eq('id', user.id)
         .single()
 
-    if (!roleError && roleData?.role) {
-        currentUserRole = roleData.role
-    }
-
+    if (!roleError && roleData?.role) currentUserRole = roleData.role
     console.log("Logged in as:", currentUserRole)
 
-    await loadProfileUsername(user.id)
+    const username = await loadProfileUsername(user.id)
+    welcomeMsg.textContent = "Welcome to OpenChat " + username + "!"
+    modalUsername.textContent = username
 
-    // 👉 only now load messages
     await loadMessages()
     subscribeToNewMessages()
     setupInfiniteScroll()
-
-    welcomeMsg.textContent = "Welcome to OpenChat " + await loadProfileUsername(user.id) + "!";
-    modalUsername.textContent = await loadProfileUsername(user.id);
 }
 
+// -------------------- PROFILE --------------------
 async function loadProfileUsername(userId) {
     const { data: profileData, error: profileError } = await supabase
         .from('profiles')
@@ -77,9 +65,10 @@ async function loadProfileUsername(userId) {
         : profileData.username
 
     profileNameEl.textContent = username
-    return username   // <-- return it here
+    return username
 }
 
+// -------------------- MESSAGES --------------------
 async function loadMessages() {
     const { data, error } = await supabase
         .from('messages')
@@ -92,11 +81,8 @@ async function loadMessages() {
 
     messagesList.innerHTML = ''
     const fragment = document.createDocumentFragment()
-
-    // reverse so newest are at bottom
     for (const msg of data.reverse()) {
-        const li = await createMessageElement(msg)
-        fragment.appendChild(li)
+        fragment.appendChild(await createMessageElement(msg))
     }
 
     messagesList.appendChild(fragment)
@@ -111,7 +97,6 @@ async function loadMessages() {
 
 async function fetchNewMessages() {
     if (!lastFetchedTimestamp) return
-
     const { data, error } = await supabase
         .from('messages')
         .select('id, content, user_id, created_at')
@@ -120,151 +105,101 @@ async function fetchNewMessages() {
         .order('created_at', { ascending: true })
 
     if (error) return console.error('Error fetching new messages:', error.message)
-    if (data.length === 0) return
+    if (!data.length) return
 
     const fragment = document.createDocumentFragment()
     for (const msg of data) {
-        const li = await createMessageElement(msg)
-        fragment.appendChild(li)
+        fragment.appendChild(await createMessageElement(msg))
         lastFetchedTimestamp = msg.created_at
     }
-
     messagesList.appendChild(fragment)
     scrollToBottom()
 }
 
-// Load older messages when scrolling to top
 function setupInfiniteScroll() {
     messagesList.addEventListener('scroll', async () => {
-        if (messagesList.scrollTop === 0 && !isLoadingOlderMessages && earliestFetchedTimestamp) {
-            isLoadingOlderMessages = true
+        if (messagesList.scrollTop !== 0 || isLoadingOlderMessages || !earliestFetchedTimestamp) return
+        isLoadingOlderMessages = true
 
-            const { data, error } = await supabase
-                .from('messages')
-                .select('id, content, user_id, created_at')
-                .is('dm_to', null)
-                .lt('created_at', earliestFetchedTimestamp)
-                .order('created_at', { ascending: false })
-                .limit(PAGE_SIZE)
+        const { data, error } = await supabase
+            .from('messages')
+            .select('id, content, user_id, created_at')
+            .is('dm_to', null)
+            .lt('created_at', earliestFetchedTimestamp)
+            .order('created_at', { ascending: false })
+            .limit(PAGE_SIZE)
 
-            if (error) {
-                console.error('Error loading older messages:', error.message)
-                isLoadingOlderMessages = false
-                return
-            }
+        if (error) { console.error(error.message); isLoadingOlderMessages = false; return }
+        if (!data.length) { isLoadingOlderMessages = false; return }
 
-            if (data.length === 0) {
-                isLoadingOlderMessages = false
-                return
-            }
+        const fragment = document.createDocumentFragment()
+        for (const msg of data.reverse()) fragment.appendChild(await createMessageElement(msg))
 
-            const fragment = document.createDocumentFragment()
-            for (const msg of data.reverse()) {
-                const li = await createMessageElement(msg)
-                fragment.appendChild(li)
-            }
+        const prevScrollHeight = messagesList.scrollHeight
+        messagesList.prepend(fragment)
+        messagesList.scrollTop = messagesList.scrollHeight - prevScrollHeight
 
-            // preserve scroll position
-            const prevScrollHeight = messagesList.scrollHeight
-            messagesList.prepend(fragment)
-            const newScrollHeight = messagesList.scrollHeight
-            messagesList.scrollTop = newScrollHeight - prevScrollHeight
-
-            earliestFetchedTimestamp = data[0].created_at
-            isLoadingOlderMessages = false
-        }
+        earliestFetchedTimestamp = data[0].created_at
+        isLoadingOlderMessages = false
     })
 }
 
 async function createMessageElement(msg) {
-    const userInfo = await getUserInfo(msg.user_id);
+    const userInfo = await getUserInfo(msg.user_id)
+    const selfInfo = await getUserInfo(user.id)
+    const userName = msg.user_id === user.id ? selfInfo.username : userInfo.username
 
-    // Determine display name
-    const selfInfo = await getUserInfo(user.id);
-    const userName = msg.user_id === user.id ? selfInfo.username : userInfo.username;
+    const li = document.createElement('li')
+    li.classList.add('message')
+    li.dataset.messageId = msg.id
 
-    const li = document.createElement('li');
-    li.classList.add('message');
-    li.dataset.messageId = msg.id;
+    // Avatar
+    const avatar = document.createElement('img')
+    avatar.classList.add('message-avatar')
+    avatar.src = userInfo.avatar_url || '../assets/images/default-avatar.png'
+    avatar.alt = userName + "'s avatar"
 
-    // --- Avatar ---
-    const avatar = document.createElement('img');
-    avatar.classList.add('message-avatar');
-    avatar.src = userInfo.avatar_url || '../assets/images/default-avatar.png';
-    avatar.alt = userName + "'s avatar";
+    // Content
+    const contentDiv = document.createElement('div')
+    contentDiv.classList.add('message-content')
 
-    // --- Message content (username + text) ---
-    const contentDiv = document.createElement('div');
-    contentDiv.classList.add('message-content');
+    const usernameEl = document.createElement('div')
+    usernameEl.classList.add('message-username')
+    usernameEl.textContent = userName
+    usernameEl.style.color = '#48BB78'
 
-    const usernameEl = document.createElement('div');
-    usernameEl.classList.add('message-username');
-    usernameEl.textContent = userName;
-    usernameEl.style.color = '#48BB78';
-
-    const textEl = document.createElement('div');
-    textEl.classList.add('message-text');
+    const textEl = document.createElement('div')
+    textEl.classList.add('message-text')
     if (msg.content.startsWith('__img__')) {
-        const imageUrl = msg.content.replace('__img__', '');
-        textEl.innerHTML = `<img src="${imageUrl}" alt="Image" style="max-width:300px;border-radius:8px;margin-top:5px;" />`;
+        textEl.innerHTML = `<img src="${msg.content.replace('__img__', '')}" alt="Image" style="max-width:300px;border-radius:8px;margin-top:5px;" />`
     } else {
-        textEl.innerHTML = parseLinks(msg.content);
+        textEl.innerHTML = parseLinks(msg.content)
     }
 
-    contentDiv.appendChild(usernameEl);
-    contentDiv.appendChild(textEl);
+    contentDiv.appendChild(usernameEl)
+    contentDiv.appendChild(textEl)
 
-    // --- Admin tools ---
+    // Admin tools
     if (currentUserRole === "admin" && msg.user_id !== user.id) {
-        const adminDiv = document.createElement('div');
-        adminDiv.classList.add('admin-tools');
+        const adminDiv = document.createElement('div')
+        adminDiv.classList.add('admin-tools')
 
-        const deleteBtn = document.createElement('button');
-        deleteBtn.textContent = "🗑️ Delete";
-        deleteBtn.addEventListener('click', () => deleteMessage(msg.id, li));
+        const deleteBtn = document.createElement('button')
+        deleteBtn.textContent = "🗑️ Delete"
+        deleteBtn.addEventListener('click', () => deleteMessage(msg.id, li))
 
-        const timeoutBtn = document.createElement('button');
-        timeoutBtn.textContent = "⏱️ Timeout";
-        timeoutBtn.addEventListener('click', () => timeoutUser(msg.user_id));
+        const timeoutBtn = document.createElement('button')
+        timeoutBtn.textContent = "⏱️ Timeout"
+        timeoutBtn.addEventListener('click', () => timeoutUser(msg.user_id))
 
-        adminDiv.appendChild(deleteBtn);
-        adminDiv.appendChild(timeoutBtn);
-        li.appendChild(adminDiv);
+        adminDiv.appendChild(deleteBtn)
+        adminDiv.appendChild(timeoutBtn)
+        li.appendChild(adminDiv)
     }
 
-    // --- Combine avatar + content ---
-    li.appendChild(avatar);
-    li.appendChild(contentDiv);
-
-    return li;
-}
-
-function subscribeToNewMessages() {
-    const channel = supabase.channel('public-messages')
-
-    channel.on(
-        'postgres_changes',
-        {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'messages'
-        },
-        async (payload) => {
-            // Only handle public messages
-            if (payload.new.dm_to === null) {
-                await appendMessage(payload.new)
-                lastFetchedTimestamp = payload.new.created_at
-            }
-        }
-    )
-
-    channel.subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-            console.log('Subscribed to live public messages!')
-        } else if (status === 'ERROR') {
-            console.error('Subscription failed.')
-        }
-    })
+    li.appendChild(avatar)
+    li.appendChild(contentDiv)
+    return li
 }
 
 async function getUserInfo(userId) {
@@ -283,13 +218,8 @@ async function getUserInfo(userId) {
             .select('email')
             .eq('id', userId)
             .single()
-
-        username = (userError || !userData?.email)
-            ? 'Unknown'
-            : userData.email.split('@')[0]
-    } else {
-        username = profileData.username
-    }
+        username = (userError || !userData?.email) ? 'Unknown' : userData.email.split('@')[0]
+    } else username = profileData.username
 
     const userInfo = { id: userId, username }
     userCache.set(userId, userInfo)
@@ -300,23 +230,16 @@ async function appendMessage(msg) {
     const li = await createMessageElement(msg)
     messagesList.appendChild(li)
 
-    const userInfo = await getUserInfo(msg.user_id);
-    // Only notify if tab not focused
+    const userInfo = await getUserInfo(msg.user_id)
     if (msg.user_id !== user.id && document.hidden) {
         unreadCount++
         updateFavicon(unreadCount)
-
-        if (Notification.permission === "granted") {
-            new Notification("OpenChat ~ " + userInfo.username, { body: msg.content })
-        }
+        if (Notification.permission === "granted") new Notification("OpenChat ~ " + userInfo.username, { body: msg.content })
         messageSound.play().catch(() => { })
     }
 
     document.addEventListener("visibilitychange", () => {
-        if (!document.hidden) {
-            unreadCount = 0
-            updateFavicon(0)
-        }
+        if (!document.hidden) { unreadCount = 0; updateFavicon(0) }
     })
 
     scrollToBottom()
@@ -331,17 +254,58 @@ function scrollToBottom() {
     messagesList.scrollTop = messagesList.scrollHeight
 }
 
-// Sending messages
-messageForm.addEventListener('submit', async (e) => {
+// -------------------- REALTIME --------------------
+let messageChannel = null
+
+function subscribeToNewMessages() {
+    // Remove previous subscription
+    if (messageChannel) supabase.removeChannel(messageChannel)
+
+    // Create a new channel
+    messageChannel = supabase.channel('messages')
+
+    messageChannel.on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages' },
+        async payload => {
+            const msg = payload.new
+
+            // ---- PUBLIC CHAT ----
+            if (!viewingDMUserId && msg.dm_to === null) {
+                await appendMessage(msg)
+                lastFetchedTimestamp = msg.created_at
+                return
+            }
+
+            // ---- DM CHAT ----
+            if (viewingDMUserId) {
+                const isFromOther = msg.user_id === viewingDMUserId && msg.dm_to === user.id
+                const isFromSelf = msg.user_id === user.id && msg.dm_to === viewingDMUserId
+                if (isFromOther || isFromSelf) {
+                    await appendMessage(msg)
+                    lastFetchedTimestamp = msg.created_at
+                }
+            }
+        }
+    )
+
+    if (messageChannel.subscribe()) {
+        console.log("Subscribed to Supabase Realtime! :D\n");
+    } else {
+        console.log("Unable to Subscribe to Supabase Realtime! :(\n");
+    }
+}
+
+// -------------------- SEND MESSAGE --------------------
+messageForm.addEventListener("submit", async e => {
     e.preventDefault()
     const content = messageInput.value.trim()
     if (!content) return
 
-    // check timeout
     const { data: userData } = await supabase
-        .from('users')
-        .select('timeout_until')
-        .eq('id', user.id)
+        .from("users")
+        .select("timeout_until")
+        .eq("id", user.id)
         .single()
 
     if (userData?.timeout_until && new Date(userData.timeout_until) > new Date()) {
@@ -349,57 +313,32 @@ messageForm.addEventListener('submit', async (e) => {
         return
     }
 
-    const { error } = await supabase.from('messages').insert([{ content, user_id: user.id, dm_to: null }])
-    if (error) return alert('Failed to send message: ' + error.message)
+    const newMessage = { content, user_id: user.id, dm_to: viewingDMUserId || null }
+    const { error } = await supabase.from("messages").insert([newMessage])
+    if (error) return alert("Failed to send message: " + error.message)
 
-    messageInput.value = ''
+    messageInput.value = ""
     messageInput.focus()
 })
 
-// Image upload
-uploadImageBtn.addEventListener('click', () => imageInput.click())
-imageInput.addEventListener('change', async (event) => {
-    const file = event.target.files[0]
-    if (!file) return
-
-    const fileExt = file.name.split('.').pop()
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
-    const filePath = `uploads/${fileName}`
-
-    const { error: uploadError } = await supabase.storage.from('images').upload(filePath, file)
-    if (uploadError) return alert('Image upload failed: ' + uploadError.message)
-
-    const { data } = supabase.storage.from('images').getPublicUrl(filePath)
-    const imageMessage = `__img__${data.publicUrl}`
-
-    const { error: insertError } = await supabase.from('messages').insert([{ content: imageMessage, user_id: user.id, dm_to: null }])
-    if (insertError) return alert('Failed to send image message: ' + insertError.message)
-
-    imageInput.value = ''
-})
-
+// -------------------- FAVICON --------------------
 function updateFavicon(unread) {
     const size = 64
     const canvas = document.createElement("canvas")
     canvas.width = size
     canvas.height = size
     const ctx = canvas.getContext("2d")
-
     const baseIcon = new Image()
-    baseIcon.crossOrigin = "anonymous" // avoid tainting if hosted elsewhere
-    baseIcon.src = "/assets/images/openchat.jpeg" // your default favicon
+    baseIcon.crossOrigin = "anonymous"
+    baseIcon.src = "/assets/images/openchat.jpeg"
 
     baseIcon.onload = () => {
-        // draw original favicon
         ctx.drawImage(baseIcon, 0, 0, size, size)
-
         if (unread > 0) {
-            // red badge
             ctx.beginPath()
             ctx.arc(size - 16, 16, 14, 0, 2 * Math.PI)
             ctx.fillStyle = "#FF0000"
             ctx.fill()
-
             ctx.fillStyle = "#fff"
             ctx.font = "bold 28px Arial"
             ctx.textAlign = "center"
@@ -407,10 +346,7 @@ function updateFavicon(unread) {
             ctx.fillText(unread > 9 ? "9+" : unread, size - 16, 16)
         }
 
-        // remove old favicons
         document.querySelectorAll("link[rel~='icon']").forEach(el => el.remove())
-
-        // inject new one
         const newFavicon = document.createElement("link")
         newFavicon.rel = "icon"
         newFavicon.type = "image/png"
@@ -419,67 +355,101 @@ function updateFavicon(unread) {
     }
 }
 
+// -------------------- PROFILE MODAL --------------------
 document.addEventListener("DOMContentLoaded", () => {
-    const profileTab = document.getElementById("profile");
-    const profileModal = document.getElementById("profile-modal");
-    const closeProfileModal = document.getElementById("close-profile-modal");
+    const profileTab = document.getElementById("profile")
+    const profileModal = document.getElementById("profile-modal")
+    const closeProfileModal = document.getElementById("close-profile-modal")
+    const editBtn = document.getElementById("editName")
+    const editForm = document.getElementById("editNameForm")
+    const saveBtn = document.getElementById("saveName")
+    const cancelBtn = document.getElementById("cancelEdit")
+    const newDisplayNameInput = document.getElementById("newDisplayName")
+    const profileUsername = document.getElementById("profile-username")
 
-    const editBtn = document.getElementById("editName");
-    const editForm = document.getElementById("editNameForm");
-    const saveBtn = document.getElementById("saveName");
-    const cancelBtn = document.getElementById("cancelEdit");
-    const modalUsername = document.getElementById("modal-username");
-    const profileUsername = document.getElementById("profile-username");
-    const newDisplayNameInput = document.getElementById("newDisplayName");
-
-    // Toggle modal
     profileTab.addEventListener("click", () => {
-        profileModal.style.display =
-            profileModal.style.display === "block" ? "none" : "block";
-    });
+        profileModal.style.display = profileModal.style.display === "block" ? "none" : "block"
+    })
+    closeProfileModal.addEventListener("click", () => profileModal.style.display = "none")
+    document.addEventListener("click", e => {
+        if (!profileModal.contains(e.target) && !profileTab.contains(e.target)) profileModal.style.display = "none"
+    })
 
-    closeProfileModal.addEventListener("click", () => {
-        profileModal.style.display = "none";
-    });
-
-    document.addEventListener("click", (e) => {
-        if (!profileModal.contains(e.target) && !profileTab.contains(e.target)) {
-            profileModal.style.display = "none";
-        }
-    });
-
-    // ✅ Edit form logic
     editBtn.addEventListener("click", () => {
-        editForm.style.display = "flex";
-        newDisplayNameInput.value = modalUsername.textContent.trim();
-        newDisplayNameInput.focus();
-    });
+        editForm.style.display = "flex"
+        newDisplayNameInput.value = modalUsername.textContent.trim()
+        newDisplayNameInput.focus()
+    })
 
     saveBtn.addEventListener("click", async () => {
-        const newName = newDisplayNameInput.value.trim();
-        if (!newName) return;
+        const newName = newDisplayNameInput.value.trim()
+        if (!newName) return
 
-        const { data: { user: currentUser } } = await supabase.auth.getUser();
-
-        // Update the database
-        const { data, error } = await supabase
-            .from('profiles') // replace with your table name
+        const { data: { user: currentUser } } = await supabase.auth.getUser()
+        const { error } = await supabase
+            .from('profiles')
             .update({ username: newName })
             .eq('id', currentUser.id)
 
-        if (error) {
-            console.error("Error updating display name:", error.message);
-            alert("Failed to update display name.");
-            return;
-        }
+        if (error) return alert("Failed to update display name.")
 
-        // Update UI
-        modalUsername.textContent = newName;
-        profileUsername.textContent = newName; // sync with sidebar tab
-        editForm.style.display = "none";
-    });
+        modalUsername.textContent = newName
+        profileUsername.textContent = newName
+        editForm.style.display = "none"
+    })
 
-    cancelBtn.addEventListener("click", () => {
-        editForm.style.display = "none";
-    });
-});
+    cancelBtn.addEventListener("click", () => editForm.style.display = "none")
+})
+
+// -------------------- DM HANDLING --------------------
+dmsButton.addEventListener("click", async () => {
+    channelList.innerHTML = "<li><strong>Direct Messages</strong></li>"
+    const { data: users, error } = await supabase
+        .from("profiles")
+        .select("id, username")
+        .neq("id", user.id)
+
+    if (error) return console.error("Error loading users:", error.message)
+
+    users.forEach(u => {
+        const li = document.createElement("li")
+        li.textContent = u.username
+        li.classList.add("dm-user")
+        li.addEventListener("click", () => loadDMConversation(u.id, u.username))
+        channelList.appendChild(li)
+    })
+
+    dmsButton.classList.add("active")
+    mainChatBtn.classList.remove("active")
+})
+
+mainChatBtn.addEventListener("click", async () => {
+    channelList.innerHTML = "<li><strong>Channels</strong></li>"
+    viewingDMUserId = null
+    await loadMessages()
+    mainChatBtn.classList.add("active")
+    dmsButton.classList.remove("active")
+})
+
+async function loadDMConversation(otherUserId, username) {
+    viewingDMUserId = otherUserId
+    lastFetchedTimestamp = null
+    earliestFetchedTimestamp = null
+
+    const { data, error } = await supabase
+        .from("messages")
+        .select("id, content, user_id, created_at, dm_to")
+        .or(`and(user_id.eq.${user.id},dm_to.eq.${otherUserId}),and(user_id.eq.${otherUserId},dm_to.eq.${user.id})`)
+        .order("created_at", { ascending: true })
+
+    if (error) return console.error("Error loading DM conversation:", error.message)
+
+    messagesList.innerHTML = ""
+    for (const msg of data) messagesList.appendChild(await createMessageElement(msg))
+    scrollToBottom()
+
+    messageInput.placeholder = `Message @${username}`
+
+    // Re-subscribe for the active DM
+    subscribeToNewMessages()
+}

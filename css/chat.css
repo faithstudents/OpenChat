@@ -71,6 +71,7 @@ header .left-aligned button:hover {
     gap: 12px;
     border-right: 1px solid #2a2d31;
     overflow-y: auto;
+    flex-shrink: 0;
 }
 
 /* Server buttons */
@@ -105,6 +106,10 @@ header .left-aligned button:hover {
 #sidebar1 button:hover {
     background-color: #3a3d42;
     transform: scale(1.05);
+}
+
+#dms_button {
+    color: #fff;
 }
 
 #sidebar1 button.active:not(#main-chat) {
@@ -217,6 +222,34 @@ header .left-aligned button:hover {
 
 #sidebar #profile .profile-info #profile-status {
     color: #00ff00;
+}
+
+#channel-list {
+  list-style: none;   /* no bullets */
+  padding: 0;
+  margin: 0;
+}
+
+#channel-list li {
+  padding: 10px 14px;
+  margin: 4px 0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+#channel-list li:hover {
+  background: #2a2d31;
+}
+
+#channel-list li.dm-user {
+  color: #ddd;
+  font-weight: 500;
+}
+
+#channel-list li.dm-user.active {
+  background: #3a3d42;
+  color: #fff;
 }
 
 /* =========================

@@ -15,10 +15,12 @@
   <link rel="apple-touch-icon" sizes="180x180" href="../assets/images/openchat.jpeg">
   <link rel="icon" type="image/jpeg" sizes="192x192" href="../assets/images/openchat.jpeg">
 
-
   <title>OpenChat</title>
+
+  <!-- CSS Links -->
   <link rel="stylesheet" href="../css/chat.css" />
   <link rel="stylesheet" href="../css/sidebar1.css">
+  <link rel="stylesheet" href="../css/profileModal.css">
 </head>
 
 <body>
@@ -34,11 +36,13 @@
   <div id="chat-section">
     <aside id="sidebar1">
       <button class="sidebar1-link" id="new_chat_btn" style="color: #fff; font-size: 24px;">&plus;</button>
-      <button class="sidebar1-link" id="dms_button"><a href="dms.html" class="sidebar1-link">DM's</a></button>
+      <button class="sidebar1-link" id="dms_button">DM's</button>
       <button id="main-chat" class="active"><a href="chat.html" class="sidebar1-link">Main Chat :D</a></button>
     </aside>
     <aside id="sidebar">
       <h2>Channels</h2>
+
+      <ul id="channel-list"></ul>    <!-- This <li> element list gets changed to the names of the users for dms. When a DM is clicked it displays everything in the main chat window. -->
 
       <!-- Profile Modal -->
       <div id="profile-modal" class="profile-modal">
@@ -63,98 +67,7 @@
       </div>
 
       <style>
-        /* Sidebar container must be relative */
-        #sidebar {
-          position: relative;
-        }
-
-        /* Profile modal positioned relative to sidebar */
-        #profile-modal {
-          display: none;
-          position: absolute;
-          bottom: 100px;
-          left: 10px;
-          background: #2a2d31;
-          border-radius: 8px;
-          padding: 15px;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-          width: 220px;
-          z-index: 2000;
-        }
-
-        .profile-modal-content {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 10px;
-          position: relative;
-        }
-
-        #close-profile-modal {
-          position: absolute;
-          top: 8px;
-          right: 12px;
-          cursor: pointer;
-          font-size: 18px;
-          color: #aaa;
-        }
-
-        #close-profile-modal:hover {
-          color: #fff;
-        }
-
-        #modal-avatar {
-          width: 60px;
-          height: 60px;
-          border-radius: 50%;
-          object-fit: cover;
-        }
-
-        /* Edit form */
-        .edit-name-form {
-          display: none;
-          flex-direction: column;
-          gap: 8px;
-          width: 100%;
-        }
-
-        .edit-name-form input {
-          padding: 6px 8px;
-          border-radius: 4px;
-          border: none;
-          outline: none;
-          background: #202225;
-          color: #fff;
-          width: 100%;
-        }
-
-        .edit-buttons {
-          display: flex;
-          justify-content: flex-end;
-          gap: 8px;
-        }
-
-        .edit-buttons button {
-          background: #5865f2;
-          border: none;
-          border-radius: 4px;
-          color: #fff;
-          padding: 5px 10px;
-          cursor: pointer;
-          font-size: 14px;
-        }
-
-        .edit-buttons button:hover {
-          background: #4752c4;
-        }
-
-        #cancelEdit {
-          background: #444;
-        }
-
-        #cancelEdit:hover {
-          background: #666;
-        }
+        
       </style>
       <div id="profile">
         <img src="../assets/images/default-avatar.png" alt="My Avatar" />
@@ -178,22 +91,9 @@
     </main>
   </div>
 
-  <script type="module">
-    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
-
-    const supabase = createClient(
-      'https://htwevjqqqyojcbgeevqy.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh0d2V2anFxcXlvamNiZ2VldnF5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMzMDg0NzYsImV4cCI6MjA2ODg4NDQ3Nn0.lszlnu4aWcDRAhp_MjJaECRFzGYze_uP7GhfWszA6fY'
-    )
-
-    const logoutBtn = document.getElementById('logoutBtn')
-    logoutBtn.addEventListener('click', async () => {
-      await supabase.auth.signOut()
-      window.location.href = '../index.html'
-    })
-  </script>
-  <script type="module" src="../js/vars.js"></script>
+  <script type="module" src="../js/auth.js"></script>
   <script type="module" src="../js/master.js"></script>
+  <script type="module" src="../js/button.js"></script>
 </body>
 
 </html>

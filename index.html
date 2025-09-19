@@ -21,11 +21,13 @@
         </form>
         <p id="error-message"></p>
     </div>
-    <script>
-        // Initialize Supabase client with your URL and anon key:
-        const supabaseUrl = 'https://htwevjqqqyojcbgeevqy.supabase.co'
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh0d2V2anFxcXlvamNiZ2VldnF5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMzMDg0NzYsImV4cCI6MjA2ODg4NDQ3Nn0.lszlnu4aWcDRAhp_MjJaECRFzGYze_uP7GhfWszA6fY'
-        const Supabase = supabase.createClient(supabaseUrl, supabaseKey);
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+        const supabase = createClient(
+            'https://htwevjqqqyojcbgeevqy.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh0d2V2anFxcXlvamNiZ2VldnF5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMzMDg0NzYsImV4cCI6MjA2ODg4NDQ3Nn0.lszlnu4aWcDRAhp_MjJaECRFzGYze_uP7GhfWszA6fY'
+        )
 
         const form = document.getElementById('login-form');
         const errorMessageEl = document.getElementById('error-message');
@@ -37,7 +39,7 @@
             const email = form.email.value.trim();
             const password = form.password.value;
 
-            const { data, error } = await Supabase.auth.signInWithPassword({ email, password });
+            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
             if (error) {
                 errorMessageEl.textContent = error.message;
