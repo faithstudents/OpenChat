@@ -478,3 +478,42 @@ header .left-aligned button:hover {
 #sidebar1::-webkit-scrollbar-thumb:hover {
     background-color: #3a3d42;
 }
+
+/* MOBILE ENHANCEMENTS */
+@media (max-width: 768px) {
+    header {
+        font-size: 1rem;
+        padding-left: 8px;
+    }
+
+  /* Collapse the sidebar entirely so chat window fills the space */
+  #sidebar {
+    width: 0;
+    padding: 0;
+    overflow: hidden;
+    transition: width 0.3s ease, padding 0.3s ease;
+    flex-shrink: 0;
+  }
+
+  /* Sidebar opens (e.g. when clicking DMs) */
+  #sidebar.show {
+    width: 240px; /* Or 80% if you want dynamic */
+    padding: 1rem;
+  }
+
+  /* Sidebar overlay for background dimming */
+  #sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 64px;
+    left: 0;
+    width: 100%;
+    height: calc(100vh - 64px);
+    background-color: rgba(0, 0, 0, 0.6);
+    z-index: 99;
+  }
+
+  #sidebar-overlay.active {
+    display: block;
+  }
+}
