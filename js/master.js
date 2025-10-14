@@ -218,6 +218,23 @@ async function createMessageElement(msg, group = false) {
             previewBox.style.display = 'block'
         })
 
+        const replyPreview = document.getElementById('reply-preview')
+        const closeReplyBtn = document.getElementById('close-reply-preview')
+        
+        // Close when clicking the X button
+        closeReplyBtn.addEventListener('click', () => {
+            replyPreview.style.display = 'none'
+            delete messageInput.dataset.replyTo
+        })
+        
+        // Close when pressing Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && replyPreview.style.display === 'block') {
+                replyPreview.style.display = 'none'
+                delete messageInput.dataset.replyTo
+            }
+        })
+
         const deleteBtn = document.createElement('button')
         deleteBtn.textContent = '🗑️'
         deleteBtn.classList.add('delete-btn')
