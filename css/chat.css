@@ -10,7 +10,7 @@
 html, body {
     height: 100%;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #1e2124;
+    background-color: #121214;
     color: #ddd;
     overflow: hidden;
 }
@@ -20,13 +20,13 @@ html, body {
 ========================= */
 header {
     height: 64px;
-    background-color: #1b1e22;
+    background-color: #121214;
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 0 2rem;
     font-weight: 600;
-    font-size: 1.3rem;
+    font-size: 1rem;
     box-shadow: 0 1px 0 #2a2d31;
     border-bottom: 1px solid #2a2d31;
 }
@@ -63,7 +63,7 @@ header .left-aligned button:hover {
 ========================= */
 #sidebar1 {
     width: 80px;
-    background-color: #1b1e22;
+    background-color: #121214;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -127,6 +127,7 @@ header .left-aligned button:hover {
     border-radius: 50%;
     background-color: #43b581;
     display: none;
+    border-left: 3px solid #ffffff;
 }
 
 #sidebar1 button.online::after {
@@ -152,9 +153,9 @@ header .left-aligned button:hover {
    CHAT SIDEBAR (#sidebar)
 ========================= */
 #sidebar {
-    width: 240px;
+    width: 280px;
     height: 100%;
-    background-color: #1b1e22;
+    background-color: #121214;
     padding: 1rem;
     display: flex;
     flex-direction: column;
@@ -257,7 +258,7 @@ header .left-aligned button:hover {
 ========================= */
 #chat-window {
     flex-grow: 1;
-    background-color: #1e2124;
+    background-color: #1a1a1e;
     display: flex;
     flex-direction: column;
     padding: 1rem;
@@ -276,13 +277,15 @@ header .left-aligned button:hover {
 
 /* Individual message */
 #messages li {
-    background-color: #1e2124;
+    background-color: #1a1a1e;
     padding: 3px 12px;
-    border-radius: 8px;
+    border-radius: 1px;
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
     transition: all 0.2s ease;
+    width: 100%;
+    padding-left: 40px;
 }
 
 #messages li:hover {
@@ -349,15 +352,16 @@ header .left-aligned button:hover {
     display: flex;
     gap: 0.5rem;
     padding: 0.5rem;
+    padding-bottom: 0;
     border-top: 1px solid #2a2d31;
 }
 
 #message-input {
     flex-grow: 1;
-    background-color: #2a2d31;
+    background-color: #222327;
     border: none;
     border-radius: 4px;
-    padding: 0.75rem 1rem;
+    padding: 1rem 1rem;
     color: #ddd;
     font-size: 1rem;
 }
@@ -367,7 +371,7 @@ header .left-aligned button:hover {
 }
 
 #message-form button, label {
-    background-color: #2a2d31;
+    background-color: #222327;
     color: #ddd;
     border: none;
     padding: 0.6rem 1.2rem;
@@ -480,7 +484,7 @@ header .left-aligned button:hover {
 
 /* Grouped messages (no avatar, username) */
 .message-grouped .message-content {
-    margin-left: 50px; /* adjust the value to your desired shift */
+    margin-left: 47px; /* adjust the value to your desired shift */
     gap: 0.1rem !important; /* tiny spacing if needed */
     margin-top: 0; /* remove any extra margin */
     padding-top: 2px; /* optional small padding */
