@@ -81,6 +81,28 @@
     <main id="chat-window">
       <ul id="messages"></ul>
 
+      <button id="scroll-bottom-btn" style="
+          position: fixed;
+          bottom: 120px;
+          right: 50px;
+          display: none;
+          padding: 10px 15px;
+          border: none;
+          border-radius: 6px;
+          background-color: #48BB78;
+          color: white;
+          font-weight: bold;
+          cursor: pointer;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+          z-index: 1000;
+      ">⬇️</button>
+
+      <div id="reply-preview" style="display:none; padding:8px; border-left: 4px solid #7289da; background:#f0f0f0; margin-bottom:4px; position:relative;">
+          <span id="reply-user" style="font-weight:bold;"></span>: 
+          <span id="reply-text"></span>
+          <button id="cancel-reply" style="position:absolute; right:8px; top:8px; background:none; border:none; cursor:pointer;">×</button>
+      </div>
+
       <form id="message-form">
         <label for="image-input" id="upload-image-btn">+</label>
         <input type="file" id="image-input" accept="image/*" style="display: none;" />

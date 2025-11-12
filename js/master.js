@@ -3,6 +3,9 @@ import { SUPABASE_KEY, SUPABASE_URL } from './supabaseConfig.js'
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
 
+// |-------------------------------------------------   |
+// |                  Variables                         |
+// |-------------------------------------------------   |
 const messagesList = document.getElementById('messages')
 const messageForm = document.getElementById('message-form')
 const messageInput = document.getElementById('message-input')
@@ -13,6 +16,8 @@ const modalUsername = document.getElementById('modal-username')
 const dmsButton = document.getElementById("dms_button")
 const mainChatBtn = document.getElementById("main-chat")
 const channelList = document.getElementById("channel-list")
+const uploadImageBtn = document.getElementById("upload-image-btn")
+const imageInput = document.getElementById("image-input")
 
 let user = null
 const userCache = new Map()
@@ -23,6 +28,10 @@ let unreadCount = 0
 let viewingDMUserId = null
 let currentUserRole = "user" // default
 const PAGE_SIZE = 20 // messages per page
+
+let lastMessageUserId = null
+let lastMessageTime = null
+const MESSAGE_GROUP_INTERVAL = 1 * 60 * 1000 // 1 minute
 
 // -------------------- INIT --------------------
 init()
@@ -72,24 +81,37 @@ async function loadProfileUsername(userId) {
 async function loadMessages() {
     const { data, error } = await supabase
         .from('messages')
-        .select('id, content, user_id, created_at')
+        .select('id, content, user_id, created_at, reply_to')
         .is('dm_to', null)
-        .order('created_at', { ascending: false })
+        .order('created_at', { ascending: false }) // DESCENDING to get latest messages
         .limit(PAGE_SIZE)
 
     if (error) return console.error('Error loading messages:', error.message)
 
     messagesList.innerHTML = ''
+    lastMessageUserId = null
+    lastMessageTime = null
+
+    // reverse so newest appear at the bottom
+    const reversedData = data.reverse()
+
     const fragment = document.createDocumentFragment()
-    for (const msg of data.reverse()) {
-        fragment.appendChild(await createMessageElement(msg))
+    for (const msg of reversedData) {
+        const now = new Date(msg.created_at)
+        let group = false
+        if (lastMessageUserId === msg.user_id && lastMessageTime && now - lastMessageTime < MESSAGE_GROUP_INTERVAL) {
+            group = true
+        }
+        fragment.appendChild(await createMessageElement(msg, group))
+        lastMessageUserId = msg.user_id
+        lastMessageTime = now
     }
 
     messagesList.appendChild(fragment)
 
-    if (data.length > 0) {
-        lastFetchedTimestamp = data[data.length - 1].created_at
-        earliestFetchedTimestamp = data[0].created_at
+    if (reversedData.length > 0) {
+        lastFetchedTimestamp = reversedData[reversedData.length - 1].created_at
+        earliestFetchedTimestamp = reversedData[0].created_at
     }
 
     scrollToBottom()
@@ -144,30 +166,89 @@ function setupInfiniteScroll() {
     })
 }
 
-async function createMessageElement(msg) {
+async function createMessageElement(msg, group = false) {
     const userInfo = await getUserInfo(msg.user_id)
     const selfInfo = await getUserInfo(user.id)
     const userName = msg.user_id === user.id ? selfInfo.username : userInfo.username
 
     const li = document.createElement('li')
     li.classList.add('message')
+    if (group) li.classList.add('message-grouped')
     li.dataset.messageId = msg.id
 
-    // Avatar
-    const avatar = document.createElement('img')
-    avatar.classList.add('message-avatar')
-    avatar.src = userInfo.avatar_url || '../assets/images/default-avatar.png'
-    avatar.alt = userName + "'s avatar"
-
-    // Content
     const contentDiv = document.createElement('div')
     contentDiv.classList.add('message-content')
 
-    const usernameEl = document.createElement('div')
-    usernameEl.classList.add('message-username')
-    usernameEl.textContent = userName
-    usernameEl.style.color = '#48BB78'
+    // Show avatar + username only if NOT grouped
+    // Inside createMessageElement(), replace header section with:
+    if (!group) {
+        const avatar = document.createElement('img')
+        avatar.classList.add('message-avatar')
+        avatar.src = userInfo.avatar_url || '../assets/images/default-avatar.png'
+        avatar.alt = `${userName}'s avatar`
+        li.appendChild(avatar)
 
+        const headerDiv = document.createElement('div')
+        headerDiv.classList.add('message-header')
+
+        const usernameEl = document.createElement('div')
+        usernameEl.classList.add('message-username')
+        usernameEl.textContent = userName
+        usernameEl.style.color = '#48BB78'
+
+        // Create buttons container
+        const buttonsContainer = document.createElement('div')
+        buttonsContainer.style.display = 'flex'
+        buttonsContainer.style.gap = '6px'
+
+        const replyBtn = document.createElement('button')
+        replyBtn.textContent = '↩️ Reply'
+        replyBtn.classList.add('reply-btn')
+        replyBtn.addEventListener('click', async () => {
+            const replyUserInfo = await getUserInfo(msg.user_id)
+            messageInput.dataset.replyTo = msg.id
+            messageInput.focus()
+
+            const previewBox = document.getElementById('reply-preview')
+            const previewUser = document.getElementById('reply-user')
+            const previewText = document.getElementById('reply-text')
+
+            previewUser.textContent = replyUserInfo.username
+            previewText.textContent = msg.content.length > 50 ? msg.content.slice(0, 50) + "..." : msg.content
+            previewBox.style.display = 'block'
+        })
+
+        const replyPreview = document.getElementById('reply-preview')
+        const closeReplyBtn = document.getElementById('cancel-reply')
+
+        // Close when clicking the X button
+        closeReplyBtn.addEventListener('click', () => {
+            replyPreview.style.display = 'none'
+            delete messageInput.dataset.replyTo
+        })
+
+        // Close when pressing Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && replyPreview.style.display === 'block') {
+                replyPreview.style.display = 'none'
+                delete messageInput.dataset.replyTo
+            }
+        })
+
+        const deleteBtn = document.createElement('button')
+        deleteBtn.textContent = '🗑️'
+        deleteBtn.classList.add('delete-btn')
+        deleteBtn.addEventListener('click', () => deleteMessage(msg.id, li))
+
+        buttonsContainer.appendChild(replyBtn)
+        buttonsContainer.appendChild(deleteBtn)
+
+        headerDiv.appendChild(usernameEl)
+        headerDiv.appendChild(buttonsContainer)
+        contentDiv.appendChild(headerDiv)
+    }
+
+    // MESSAGE TEXT
     const textEl = document.createElement('div')
     textEl.classList.add('message-text')
     if (msg.content.startsWith('__img__')) {
@@ -175,12 +256,37 @@ async function createMessageElement(msg) {
     } else {
         textEl.innerHTML = parseLinks(msg.content)
     }
-
-    contentDiv.appendChild(usernameEl)
     contentDiv.appendChild(textEl)
+    li.appendChild(contentDiv)
+
+    // Reply preview
+    if (msg.reply_to) {
+        try {
+            const { data: replyData, error: replyError } = await supabase
+                .from('messages')
+                .select('content, user_id')
+                .eq('id', msg.reply_to)
+                .single()
+
+            if (!replyError && replyData) {
+                const replyUserInfo = await getUserInfo(replyData.user_id) // <- make sure we await this
+                const replyDiv = document.createElement('div')
+                replyDiv.classList.add('message-reply')
+                replyDiv.textContent = `↪ @${replyUserInfo.username}: ${replyData.content.slice(0, 50)}${replyData.content.length > 50 ? "..." : ""}`
+                replyDiv.style.fontStyle = 'italic'
+                replyDiv.style.fontSize = '0.85em'
+                replyDiv.style.marginBottom = '4px'
+
+                // Insert **above** message text
+                contentDiv.insertBefore(replyDiv, textEl)
+            }
+        } catch (err) {
+            console.error("Failed to load reply message:", err)
+        }
+    }
 
     // Admin tools
-    if (currentUserRole === "admin" && msg.user_id !== user.id) {
+    if (currentUserRole === "admin" && msg.user_id !== user.id && !group) {
         const adminDiv = document.createElement('div')
         adminDiv.classList.add('admin-tools')
 
@@ -197,8 +303,8 @@ async function createMessageElement(msg) {
         li.appendChild(adminDiv)
     }
 
-    li.appendChild(avatar)
-    li.appendChild(contentDiv)
+    if (group) li.style.marginTop = '-4px'
+
     return li
 }
 
@@ -227,10 +333,21 @@ async function getUserInfo(userId) {
 }
 
 async function appendMessage(msg) {
-    const li = await createMessageElement(msg)
+    const userInfo = await getUserInfo(msg.user_id)
+    const now = new Date(msg.created_at)
+    let shouldGroup = false
+
+    if (lastMessageUserId === msg.user_id && lastMessageTime) {
+        const diff = now - lastMessageTime
+        if (diff < MESSAGE_GROUP_INTERVAL) shouldGroup = true
+    }
+
+    const li = await createMessageElement(msg, shouldGroup)
     messagesList.appendChild(li)
 
-    const userInfo = await getUserInfo(msg.user_id)
+    lastMessageUserId = msg.user_id
+    lastMessageTime = now
+
     if (msg.user_id !== user.id && document.hidden) {
         unreadCount++
         updateFavicon(unreadCount)
@@ -238,11 +355,32 @@ async function appendMessage(msg) {
         messageSound.play().catch(() => { })
     }
 
-    document.addEventListener("visibilitychange", () => {
-        if (!document.hidden) { unreadCount = 0; updateFavicon(0) }
-    })
-
     scrollToBottom()
+}
+
+// -------------------- DELETE MESSAGE --------------------
+async function deleteMessage(messageId, messageElement) {
+    const confirmDelete = confirm("Delete this message?");
+    if (!confirmDelete) return;
+
+    try {
+        const { error } = await supabase
+            .from("messages")
+            .delete()
+            .eq("id", messageId);
+
+        if (error) {
+            console.error("Error deleting message:", error.message);
+            alert("Failed to delete message.");
+            return;
+        }
+
+        // Remove from UI
+        messageElement.remove();
+        console.log(`Message ${messageId} deleted.`);
+    } catch (err) {
+        console.error("Unexpected error deleting message:", err);
+    }
 }
 
 function parseLinks(content) {
@@ -313,12 +451,19 @@ messageForm.addEventListener("submit", async e => {
         return
     }
 
-    const newMessage = { content, user_id: user.id, dm_to: viewingDMUserId || null }
+    const newMessage = {
+        content,
+        user_id: user.id,
+        dm_to: viewingDMUserId || null,
+        reply_to: messageInput.dataset.replyTo || null  // <-- reply reference
+    }
+
     const { error } = await supabase.from("messages").insert([newMessage])
     if (error) return alert("Failed to send message: " + error.message)
 
     messageInput.value = ""
-    messageInput.focus()
+    messageInput.placeholder = viewingDMUserId ? `Message @${viewingDMUserId}` : "Type a message..."
+    delete messageInput.dataset.replyTo  // clear reply state
 })
 
 // -------------------- FAVICON --------------------
@@ -453,3 +598,44 @@ async function loadDMConversation(otherUserId, username) {
     // Re-subscribe for the active DM
     subscribeToNewMessages()
 }
+
+
+// ----------------- Image handling ------------------
+uploadImageBtn.addEventListener('click', () => imageInput.click())
+imageInput.addEventListener('change', async (event) => {
+    const file = event.target.files[0]
+    if (!file) return
+
+    const fileExt = file.name.split('.').pop()
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
+    const filePath = `uploads/${fileName}`
+
+    const { error: uploadError } = await supabase.storage.from('images').upload(filePath, file)
+    if (uploadError) return alert('Image upload failed: ' + uploadError.message)
+
+    const { data } = supabase.storage.from('images').getPublicUrl(filePath)
+    const imageMessage = `__img__${data.publicUrl}`
+
+    const { error: insertError } = await supabase.from('messages').insert([{ content: imageMessage, user_id: user.id, dm_to: null }])
+    if (insertError) return alert('Failed to send image message: ' + insertError.message)
+
+    imageInput.value = ''
+})
+
+// --------------- Scroll to bottom button ------------------
+const scrollBottomBtn = document.getElementById('scroll-bottom-btn')
+
+// Show button when user scrolls up
+messagesList.addEventListener('scroll', () => {
+    if (messagesList.scrollTop + messagesList.clientHeight < messagesList.scrollHeight - 50) {
+        scrollBottomBtn.style.display = 'block'
+    } else {
+        scrollBottomBtn.style.display = 'none'
+    }
+})
+
+// Scroll to bottom when button clicked
+scrollBottomBtn.addEventListener('click', () => {
+    messagesList.scrollTop = messagesList.scrollHeight
+    scrollBottomBtn.style.display = 'none'
+})

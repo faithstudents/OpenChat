@@ -10,7 +10,7 @@
 html, body {
     height: 100%;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #1e2124;
+    background-color: #121214;
     color: #ddd;
     overflow: hidden;
 }
@@ -20,13 +20,13 @@ html, body {
 ========================= */
 header {
     height: 64px;
-    background-color: #1b1e22;
+    background-color: #121214;
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 0 2rem;
     font-weight: 600;
-    font-size: 1.3rem;
+    font-size: 1rem;
     box-shadow: 0 1px 0 #2a2d31;
     border-bottom: 1px solid #2a2d31;
 }
@@ -63,7 +63,7 @@ header .left-aligned button:hover {
 ========================= */
 #sidebar1 {
     width: 80px;
-    background-color: #1b1e22;
+    background-color: #121214;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -127,6 +127,7 @@ header .left-aligned button:hover {
     border-radius: 50%;
     background-color: #43b581;
     display: none;
+    border-left: 3px solid #ffffff;
 }
 
 #sidebar1 button.online::after {
@@ -152,9 +153,9 @@ header .left-aligned button:hover {
    CHAT SIDEBAR (#sidebar)
 ========================= */
 #sidebar {
-    width: 240px;
+    width: 280px;
     height: 100%;
-    background-color: #1b1e22;
+    background-color: #121214;
     padding: 1rem;
     display: flex;
     flex-direction: column;
@@ -257,7 +258,7 @@ header .left-aligned button:hover {
 ========================= */
 #chat-window {
     flex-grow: 1;
-    background-color: #1e2124;
+    background-color: #1a1a1e;
     display: flex;
     flex-direction: column;
     padding: 1rem;
@@ -269,21 +270,22 @@ header .left-aligned button:hover {
     flex-grow: 1;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.1rem;
     overflow-y: auto;
-    padding: 0 10px;
     scroll-behavior: smooth;
 }
 
 /* Individual message */
 #messages li {
-    background-color: #1e2124;
-    padding: 10px 12px;
-    border-radius: 8px;
+    background-color: #1a1a1e;
+    padding: 3px 12px;
+    border-radius: 1px;
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
     transition: all 0.2s ease;
+    width: 100%;
+    padding-left: 40px;
 }
 
 #messages li:hover {
@@ -350,15 +352,16 @@ header .left-aligned button:hover {
     display: flex;
     gap: 0.5rem;
     padding: 0.5rem;
+    padding-bottom: 0;
     border-top: 1px solid #2a2d31;
 }
 
 #message-input {
     flex-grow: 1;
-    background-color: #2a2d31;
+    background-color: #222327;
     border: none;
     border-radius: 4px;
-    padding: 0.75rem 1rem;
+    padding: 1rem 1rem;
     color: #ddd;
     font-size: 1rem;
 }
@@ -368,7 +371,7 @@ header .left-aligned button:hover {
 }
 
 #message-form button, label {
-    background-color: #2a2d31;
+    background-color: #222327;
     color: #ddd;
     border: none;
     padding: 0.6rem 1.2rem;
@@ -477,6 +480,143 @@ header .left-aligned button:hover {
 #sidebar::-webkit-scrollbar-thumb:hover,
 #sidebar1::-webkit-scrollbar-thumb:hover {
     background-color: #3a3d42;
+}
+
+/* Grouped messages (no avatar, username) */
+.message-grouped .message-content {
+    margin-left: 47px; /* adjust the value to your desired shift */
+    gap: 0.1rem !important; /* tiny spacing if needed */
+    margin-top: 0; /* remove any extra margin */
+    padding-top: 2px; /* optional small padding */
+}
+
+/* Container for username + reply button */
+.message-content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%; /* <-- full width to prevent misalignment */
+}
+
+.message-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%; /* <-- ensures reply button stays right */
+    flex-shrink: 0; /* prevents it from shrinking on small messages */
+}
+
+.reply-btn {
+    flex-shrink: 0; /* ensures it never compresses */
+    margin-right: 50px;
+    opacity: 0;
+    pointer-events: none; /* prevents clicks when hidden */
+    transition: opacity 0.2s ease;
+}
+
+.message:hover .reply-btn {
+    opacity: 1;
+    pointer-events: auto; /* allow clicks now */
+}
+
+/* Reply button style stays */
+.reply-btn {
+    background-color: transparent;
+    border: none;
+    color: #00aaff;
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.reply-btn:hover {
+    background-color: rgba(0, 170, 255, 0.1);
+    color: #0077cc;
+}
+
+/* Message text always below header */
+.message-text {
+    color: #ddd;
+    word-wrap: break-word;
+    margin-left: 0;  /* ensures it aligns under username */
+    margin-top: 2px;
+}
+
+.message-reply {
+    background-color: #f1f1f1;
+    padding: 4px 8px;
+    border-left: 2px solid #48BB78;
+    border-radius: 4px;
+    margin-bottom: 4px;
+    color: #000000;
+}
+
+/* Reply preview container */
+#reply-preview {
+    display: none;
+    background-color: #2f3136 !important; /* dark gray background */
+    color: #ddd;                /* light text color */
+    padding: 8px 12px;
+    border-left: 4px solid #7289da; /* accent */
+    border-radius: 4px;
+    margin-bottom: 6px;
+    font-size: 0.9rem;
+    position: relative;
+    height: 120px;             /* fixed height */
+    white-space: normal;
+    word-wrap: break-word;
+}
+
+/* Username inside the preview */
+#reply-user {
+    font-weight: bold;
+    color: #00b0f4; /* Discord username-blue */
+    margin-right: 6px;
+}
+
+/* Message text inside preview */
+#reply-text {
+    color: #dcddde; /* Discord message gray */
+}
+
+/* Cancel (×) button */
+#cancel-reply {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #b9bbbe;
+    font-size: 16px;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+#cancel-reply:hover {
+    color: #fff;
+}
+
+.delete-btn {
+    background: transparent;
+    border: none;
+    color: #ff5555;
+    margin-left: 8px;
+    cursor: pointer;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+
+.message:hover .delete-btn {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.delete-btn:hover {
+    color: #ff7777;
 }
 
 /* MOBILE ENHANCEMENTS */
